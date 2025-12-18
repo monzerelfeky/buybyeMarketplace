@@ -1,0 +1,72 @@
+.category-page {
+  padding: 2rem;
+  padding-top: calc(2rem + 150px); 
+  font-family: 'Arial', sans-serif;
+  min-height: calc(100vh - 170px - 380px); /* header + footer height */
+  max-width: 950px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+
+.category-header h1 {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.category-header h2 {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 2rem;
+}
+
+/* Products grid */
+.products-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Make the link wrap the product card */
+.product-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Single product card */
+.product-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #fff;
+  text-align: center;
+  padding: 1rem;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.product-card:hover {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px); 
+  cursor: pointer;
+}
+
+.product-card img {
+  width: 100%;
+  height: auto;
+  margin-bottom: 0.75rem;
+}
+
+.product-card h3 {
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.product-card p {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #007bff; 
+}

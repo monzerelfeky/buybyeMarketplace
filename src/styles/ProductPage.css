@@ -1,0 +1,46 @@
+/* Adjust for fixed header */
+.product-page {
+  padding: 2rem;
+  padding-top: calc(2rem + 170px); 
+  font-family: 'Arial', sans-serif;
+  min-height: calc(100vh - 170px - 380px); 
+  display: flex;
+  flex-direction: column;
+}
+
+/* Product details layout */
+.product-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+}
+
+.product-details img {
+  width: 300px;
+  max-width: 100%;
+  border-radius: 8px;
+}
+
+.product-info {
+  flex: 1;
+  min-width: 200px;
+}
+
+.product-info h1 {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.product-price {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #007bff;
+  margin-bottom: 1rem;
+}
+
+.product-description {
+  font-size: 1rem;
+  color: #333;
+  line-height: 1.5;
+}

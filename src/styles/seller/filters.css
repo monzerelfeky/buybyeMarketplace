@@ -1,0 +1,28 @@
+.items-filter-bar {
+  margin-top: 20px;
+  margin-bottom: 25px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.filter-input,
+.filter-select {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #d4d7e1;
+  font-size: 15px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.filter-btn {
+  padding: 12px 22px;
+  border-radius: 12px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.22s ease;
+}

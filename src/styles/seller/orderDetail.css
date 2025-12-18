@@ -1,0 +1,460 @@
+/* ============================================================
+   ORDER DETAIL MODAL — Clean Blue Theme (2025 Updated)
+   ============================================================ */
+
+   
+.od-header-no-close {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.od-close {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  color: #475569;
+  padding: 6px;
+  transition: 0.2s;
+}
+
+.od-close:hover {
+  color: #1e293b;
+}
+
+.od-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.od-status-badge {
+  display: inline-block;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 16px;
+  border-radius: 50px;
+  margin-bottom: 20px;
+}
+
+/* ============================================================
+   CONTENT WRAPPER
+   ============================================================ */
+.od-content {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* ============================================================
+   SECTION BLOCKS
+   ============================================================ */
+.od-section {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.od-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e40af;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.od-section-title::before {
+  content: "";
+  width: 5px;
+  height: 18px;
+  background: #3b82f6;
+  border-radius: 3px;
+}
+
+/* ============================================================
+   ORDER ITEMS
+   ============================================================ */
+.od-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.od-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+  color: #475569;
+}
+
+.od-item-qty {
+  color: #64748b;
+  margin-right: 10px;
+}
+
+.od-item-price {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.od-total-row {
+  padding-top: 14px;
+  border-top: 1px dashed #cbd5e1;
+  font-size: 17px;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  color: #1e293b;
+}
+
+/* ============================================================
+   BUYER INFO GRID
+   ============================================================ */
+.od-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.od-full {
+  grid-column: span 2;
+}
+
+.od-label {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.od-value {
+  font-size: 15px;
+  color: #1e293b;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   PAYMENT SUMMARY
+   ============================================================ */
+.od-payment .od-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  color: #475569;
+}
+
+.od-payment .total {
+  padding-top: 12px;
+  border-top: 2px solid #e2e8f0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* ============================================================
+   ACTION BUTTONS
+   ============================================================ */
+.od-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.od-btn {
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s;
+  border: 1px solid transparent;
+}
+
+.od-btn.primary {
+  background: #2563eb;
+  color: white;
+}
+
+.od-btn.primary:hover {
+  background: #1d4ed8;
+}
+
+.od-btn.danger {
+  background: #ef4444;
+  color: white;
+}
+
+.od-btn.danger:hover {
+  background: #dc2626;
+}
+
+/* ============================================================
+   INPUTS
+   ============================================================ */
+.od-input,
+.od-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 15px;
+  background: white;
+}
+
+.od-input:focus,
+.od-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.od-textarea {
+  min-height: 100px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+/* ============================================================
+   MODAL CONTAINER SCROLL FIX
+   ============================================================ */
+.um-container {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: pop 0.25s ease;
+}
+
+@keyframes pop {
+  from { transform: scale(0.97); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Scrollbar */
+.um-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.um-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+/* ============================================================
+   FIXED TIMELINE — FULLY WORKING VERSION
+   ============================================================ */
+
+.od-timeline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 0 20px;
+  margin: 35px 0 48px;
+  position: relative;
+  height: 90px;
+}
+
+/* Each step */
+.od-timeline-step {
+  flex: 1;
+  position: relative;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* DOT */
+.od-timeline-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  border: 4px solid white;
+  box-shadow: 0 0 0 2px #e2e8f0;
+  transition: 0.25s ease;
+  z-index: 2;
+}
+
+/* COMPLETED DOT */
+.od-timeline-dot.completed {
+  background: #3b82f6;
+  box-shadow: 0 0 0 2px #3b82f6;
+}
+
+/* ACTIVE DOT PULSE */
+.od-timeline-dot.active {
+  background: #1d4ed8;
+  box-shadow: 0 0 0 6px rgba(29, 78, 216, 0.35);
+  animation: pulseDot 1.3s infinite ease-in-out;
+}
+
+@keyframes pulseDot {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+/* LABEL */
+.od-timeline-label {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #475569;
+}
+
+/* CONNECTOR LINE */
+.od-timeline-line {
+  position: absolute;
+  top: 10px; /* centers line between dots */
+  left: 50%;
+  right: -50%;
+  height: 4px;
+  background: #e2e8f0;
+  z-index: 1;
+  border-radius: 50px;
+  overflow: hidden;
+}
+
+/* Blue progress fill */
+.od-timeline-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #3b82f6;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s ease;
+}
+
+/* When completed — fill fully */
+.od-timeline-line.completed::after {
+  transform: scaleX(1);
+}
+
+
+
+/* ============================================================
+   TRACKING NUMBER — Clean Minimal Glow (No heavy animations)
+   ============================================================ */
+
+.tracking-section {
+  position: relative;
+}
+
+.tracking-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: white;
+  border: 2px solid #cbd5e1;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  overflow: hidden; /* prevents window overflow */
+}
+
+.tracking-box.active {
+  border-color: #3b82f6;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.2);
+}
+
+/* soft pulse only when active */
+.tracking-box.active::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: rgba(59, 130, 246, 0.10);
+  animation: trackingPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes trackingPulse {
+  0% { opacity: 0; }
+  50% { opacity: 0.35; }
+  100% { opacity: 0; }
+}
+
+/* Truck Icon */
+.tracking-icon {
+  font-size: 22px;
+  animation: truckSoft 2s ease-in-out infinite;
+}
+
+@keyframes truckSoft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* Input */
+.tracking-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 15px;
+  position: relative;
+  z-index: 2;
+}
+
+.tracking-input::placeholder {
+  color: #a0aec0;
+}
+
+/* Copy button */
+.tracking-copy {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.tracking-copy:hover {
+  background: #1d4ed8;
+}
+
+/* Helper text */
+.tracking-helper {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 6px;
+  opacity: 0;
+  animation: helperFadeIn 0.4s forwards;
+}
+
+@keyframes helperFadeIn {
+  to { opacity: 1; }
+}
+
+
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 480px) {
+  .od-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .od-full {
+    grid-column: span 1;
+  }
+
+  .od-actions {
+    flex-direction: column;
+  }
+
+  .od-btn {
+    width: 100%;
+  }
+}

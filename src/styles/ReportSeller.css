@@ -1,0 +1,73 @@
+.report-seller-container {
+    max-width: 700px;
+    margin: 120px auto;
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+}
+
+.report-seller-container h1 {
+    text-align: center;
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 25px;
+    font-size: 15px;
+}
+
+.report-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.report-form label {
+    font-weight: 600;
+}
+
+.report-form label span {
+    color: red;
+}
+
+.report-form select,
+.report-form textarea,
+.report-form input[type="file"] {
+    width: 95%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 15px;
+}
+
+.report-form textarea {
+    min-height: 140px;
+    resize: vertical;
+}
+
+.submit-btn-report {
+    width: 80%;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    background: #007bff;
+    color: #fff;
+    font-size: 17px;
+    cursor: pointer;
+    transition: background 0.3s;
+    display: block;
+    margin: 20px auto;
+    /* centers the button horizontally */
+    text-align: center;
+
+
+
+}
+
+.submit-btn-report:hover {
+    background: #0056b3;
+}

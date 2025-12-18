@@ -1,0 +1,14 @@
+.item-btn,
+.status-btn,
+.enhanced-order-view-btn {
+  transition: 0.25s ease;
+}
+
+.enhanced-order-view-btn {
+  background: #007bff;
+  color: white;
+}
+
+.enhanced-order-view-btn:hover {
+  background: #0064d4;
+}

@@ -1,0 +1,44 @@
+  /* GLOBAL PAGE CONTAINER */
+  .page-container {
+    padding: 40px;
+    max-width: 1100px;
+    margin: auto;
+  }
+
+  .page-title,
+  .seller-title {
+    text-align: center;
+    font-size: 36px;
+    font-weight: 800;
+    color: #1f2937;
+    margin-bottom: 35px;
+  }
+
+  /* FORM INPUTS */
+  .form-input,
+  .form-textarea,
+  select {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+  }
+
+  .form-textarea {
+    height: 120px;
+  }
+
+  /* Whole page takes full height */
+  .page-wrapper {
+    min-height: 111vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .seller-container {
+    flex: 1;
+    width: 100%;
+    display: block;  /* Prevent flex behavior from affecting grid */
+  }
+

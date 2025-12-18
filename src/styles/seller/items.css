@@ -1,0 +1,422 @@
+/* ============================================================
+   SELLER ITEMS — Modern 2025 Clean Design
+   Matches OrderDetail + Dashboard premium theme
+============================================================ */
+
+/* Page Wrapper */
+.page-container {
+  max-width: 1200px;
+  margin: auto;
+  padding: 32px 22px;
+}
+
+
+
+/* ============================================================
+   TOP BAR: Search / Category / Sort / View Toggle
+============================================================ */
+.items-top-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1.1fr) minmax(0, 1.1fr) auto;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 5px;
+  margin-top: 100px;
+}
+
+/* Search box */
+.items-search-box {
+  width: 93%;
+  margin-top: 25px;
+}
+
+.items-search-input {
+  width: 100%;
+  height: 50px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  font-size: 15px;
+  background: white;
+  transition: 0.2s ease;
+}
+
+.items-search-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  outline: none;
+}
+
+/* Category / Sort */
+.items-filter {
+  height: 50px;
+  margin-top: 25px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  background: white;
+  font-size: 15px;
+  transition: 0.2s ease;
+}
+
+.items-filter:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  outline: none;
+}
+
+/* ==========================================
+   VIEW TOGGLE (uses your global styles)
+========================================== */
+.view-toggle {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.toggle-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: rgba(243, 244, 246, 0.7);
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+  transition: 0.25s ease;
+}
+
+.toggle-btn:hover {
+  background: rgba(229, 231, 235, 0.95);
+  transform: translateY(-2px);
+}
+
+.toggle-btn.active {
+  border-color: #2563eb;
+  background: #eef3ff;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.25);
+}
+
+/* GRID ICON */
+.grid-icon {
+  display: grid;
+  grid-template-columns: repeat(2, 12px);
+  gap: 6px;
+}
+
+.grid-icon div {
+  width: 12px;
+  height: 12px;
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+
+/* LIST ICON */
+.list-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.list-icon div {
+  width: 24px;
+  height: 6px;
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+
+/* ============================================================
+   GRID VIEW
+============================================================ */
+.items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 28px;
+}
+
+/* GRID CARD */
+.items-grid .item-card {
+  background: white;
+  border-radius: 22px;
+  padding: 24px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+
+  transition: 0.28s ease;
+}
+
+.items-grid .item-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.08);
+  border-color: #cad6ff;
+}
+
+/* ============================================================
+   LIST VIEW (Shopify-inspired)
+============================================================ */
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.items-list .item-card {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+
+  background: white;
+  padding: 20px 24px;
+
+  border-radius: 20px;
+  border: 1px solid #e5e7eb;
+
+  transition: 0.25s ease;
+}
+
+.items-list .item-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================================
+   IMAGE / CAROUSEL
+============================================================ */
+
+/* Common wrapper so we can position arrows/dots */
+.item-img-wrapper {
+  position: relative;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+/* In list view, make it more compact */
+.items-list .item-img-wrapper {
+  width: 95px;
+}
+
+/* Base image style – reused by grid & list */
+.item-img.thumb {
+  width: 100%;
+  border-radius: 14px;
+  object-fit: cover;
+  display: block;
+}
+
+/* Grid height */
+.items-grid .item-img.thumb {
+  height: 260px;
+  background: #f3f4f9;
+  border: 1px solid #e3e4ee;
+}
+
+/* List height */
+.items-list .item-img.thumb {
+  height: 95px;
+  background: #eef2ff;
+  border: 1px solid #dbe1ff;
+}
+
+/* Placeholder when no image */
+.item-img-placeholder {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  width: 100%;
+  height: 100%;
+
+  border-radius: 14px;
+  border: 1px dashed #cbd5e1;
+  background: #f8fafc;
+
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+
+/* Arrows */
+.item-img-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(15, 23, 42, 0.55);
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  transition: 0.2s ease;
+}
+
+.item-img-nav.left {
+  left: 6px;
+}
+
+.item-img-nav.right {
+  right: 6px;
+}
+
+.item-img-nav:hover {
+  background: rgba(15, 23, 42, 0.8);
+  transform: translateY(-50%) scale(1.05);
+}
+
+/* Dots */
+.item-img-dots {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+}
+
+.item-img-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(148, 163, 184, 0.85);
+  cursor: pointer;
+  padding: 0;
+}
+
+.item-img-dot.active {
+  width: 12px;
+  background: #2563eb;
+}
+
+/* ============================================================
+   TEXT / META
+============================================================ */
+.item-info {
+  flex: 1;
+  margin-top: 12px;
+}
+
+.items-list .item-info {
+  margin-top: 0;
+  margin-left: 10px;
+}
+
+.item-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.item-price {
+  font-size: 17px;
+  font-weight: 700;
+  color: #2563eb;
+  margin-top: 4px;
+}
+
+.item-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.item-status {
+  font-size: 14px;
+  color: #64748b;
+}
+
+/* Buttons */
+.item-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.item-btn {
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+
+.item-btn.edit {
+  background: #2563eb;
+  color: white;
+}
+
+.item-btn.deactivate {
+  background: #6b7280;
+  color: white;
+}
+
+.item-btn.delete {
+  background: #ef4444;
+  color: white;
+}
+
+.item-btn:hover {
+  transform: translateY(-2px);
+}
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+@media (max-width: 900px) {
+  .items-top-bar {
+    grid-template-columns: minmax(0, 1.8fr) minmax(0, 1.1fr);
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "search search"
+      "category sort"
+      "view view";
+    row-gap: 10px;
+  }
+
+  .items-search-box {
+    grid-area: search;
+  }
+}
+
+@media (max-width: 640px) {
+  .items-top-bar {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+
+  .view-toggle {
+    justify-content: flex-start;
+  }
+
+  .items-list .item-card {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    gap: 14px;
+  }
+
+  .item-right {
+    align-items: flex-start;
+  }
+
+  .item-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}

@@ -1,0 +1,273 @@
+.static-page {
+  min-height: 100vh;
+  padding: 120px 20px 60px;
+  background: #f8fafc;
+}
+
+.page-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.page-title {
+  font-size: 42px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.page-content {
+  background: white;
+  padding: 48px;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  line-height: 1.7;
+}
+
+.page-content p {
+  font-size: 16px;
+  color: #475569;
+  margin-bottom: 20px;
+}
+
+.page-content h2 {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-top: 40px;
+  margin-bottom: 20px;
+}
+
+.page-content h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #334155;
+  margin-top: 24px;
+  margin-bottom: 12px;
+}
+
+.page-content ul,
+.page-content ol {
+  margin-bottom: 24px;
+  padding-left: 28px;
+}
+
+.page-content li {
+  font-size: 16px;
+  color: #475569;
+  margin-bottom: 12px;
+  line-height: 1.7;
+}
+
+/* Contact Page */
+.contact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+  margin: 32px 0;
+}
+
+.contact-card {
+  background: #f8fafc;
+  padding: 24px;
+  border-radius: 12px;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+}
+
+.contact-card h3 {
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+
+.contact-small {
+  font-size: 14px !important;
+  color: #94a3b8 !important;
+}
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.contact-form input,
+.contact-form textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: inherit;
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.submit-btn {
+  padding: 14px 28px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.submit-btn:hover {
+  background: #1d4ed8;
+}
+
+/* FAQ */
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.faq-item {
+  padding: 24px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.faq-question {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 12px 0;
+}
+
+.faq-answer {
+  font-size: 16px;
+  color: #475569;
+  margin: 0;
+}
+
+/* Seller Pages */
+.benefits-list li {
+  font-size: 17px;
+  padding: 12px;
+  background: #f0f9ff;
+  border-left: 4px solid #2563eb;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px;
+  margin: 32px 0;
+}
+
+.step-card {
+  background: #f8fafc;
+  padding: 28px;
+  border-radius: 12px;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+}
+
+.step-number {
+  display: inline-block;
+  width: 48px;
+  height: 48px;
+  line-height: 48px;
+  background: #2563eb;
+  color: white;
+  border-radius: 50%;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.cta-button-large {
+  display: inline-block;
+  padding: 18px 48px;
+  background: #16a34a;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  margin-top: 32px;
+}
+
+.cta-button-large:hover {
+  background: #15803d;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(22, 163, 74, 0.3);
+}
+
+/* Fees Page */
+.fees-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 24px;
+  margin: 32px 0;
+}
+
+.fee-card {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  padding: 32px;
+  border-radius: 16px;
+  text-align: center;
+  border: 1px solid #bae6fd;
+}
+
+.fee-amount {
+  font-size: 48px;
+  font-weight: 900;
+  color: #0284c7;
+  margin: 16px 0 12px;
+}
+
+.example-box {
+  background: #f8fafc;
+  padding: 32px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  margin: 32px 0;
+}
+
+.calc-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 16px;
+}
+
+.calc-row.total {
+  border-top: 2px solid #2563eb;
+  border-bottom: none;
+  margin-top: 8px;
+  padding-top: 16px;
+  font-size: 18px;
+  color: #2563eb;
+}
+
+@media (max-width: 768px) {
+  .static-page {
+    padding: 100px 16px 40px;
+  }
+
+  .page-content {
+    padding: 28px 20px;
+  }
+
+  .page-title {
+    font-size: 32px;
+  }
+}

@@ -1,0 +1,60 @@
+.view-toggle {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 25px;
+  margin-top: 50px;
+  gap: 14px;
+}
+
+.toggle-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: rgba(243, 244, 246, 0.7);
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+  transition: 0.25s ease;
+}
+
+.toggle-btn:hover {
+  background: rgba(229, 231, 235, 0.95);
+  transform: translateY(-2px);
+}
+
+.toggle-btn.active {
+  border-color: #2563eb;
+  background: #eef3ff;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.25);
+}
+
+/* GRID ICON */
+.grid-icon {
+  display: grid;
+  grid-template-columns: repeat(2, 12px);
+  gap: 6px;
+}
+
+.grid-icon div {
+  width: 12px;
+  height: 12px;
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+
+/* LIST ICON */
+.list-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.list-icon div {
+  width: 24px;
+  height: 6px;
+  background: #1a1a1a;
+  border-radius: 4px;
+}

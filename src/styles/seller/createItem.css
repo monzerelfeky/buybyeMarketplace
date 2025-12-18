@@ -1,0 +1,188 @@
+/* Create Item Modal – Same design language as OrderDetail */
+.ci-header {
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.ci-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.ci-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ci-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.ci-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.ci-input,
+.ci-textarea {
+  padding: 12px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 15px;
+  background: white;
+  transition: all 0.2s;
+}
+
+.ci-input:focus,
+.ci-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.ci-textarea {
+  min-height: 120px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+/* Two columns on larger screens */
+.ci-row {
+  display: flex;
+  gap: 16px;
+}
+
+.ci-field.half {
+  flex: 1;
+}
+
+/* Upload Area */
+.ci-upload-area {
+  border: 2px dashed #94a3b8;
+  border-radius: 12px;
+  background: #f8fafc;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.ci-upload-area:hover {
+  border-color: #3b82f6;
+  background: #f0f7ff;
+}
+
+.ci-file-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.ci-upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  cursor: pointer;
+  user-select: none;
+  color: #64748b;
+}
+
+.ci-upload-icon {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2563eb;
+  margin-bottom: 8px;
+}
+
+.ci-upload-hint {
+  font-size: 14px;
+  margin: 0;
+  text-align: center;
+  color: #64748b;
+}
+
+/* Preview grid (shared look with Edit) */
+/* ... existing Create Item styles ... */
+
+/* IMAGE PREVIEW GRID – shared with create modal */
+.ci-preview-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 10px;
+}
+
+.ci-preview-img {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  background: #f9fafb;
+}
+
+.ci-preview-img img {
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+  display: block;
+}
+
+.ci-remove-img {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0,0,0,0.55);
+  border: none;
+  color: white;
+  font-size: 11px;
+  border-radius: 999px;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* Submit Button */
+.ci-actions {
+  margin-top: 10px;
+}
+
+.ci-btn {
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  width: 100%;
+}
+
+.ci-btn.primary {
+  background: #2563eb;
+  color: white;
+}
+
+.ci-btn.primary:hover {
+  background: #1d4ed8;
+}
+
+/* Responsive */
+@media (max-width: 540px) {
+  .ci-row {
+    flex-direction: column;
+  }
+}

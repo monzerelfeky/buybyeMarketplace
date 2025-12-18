@@ -1,0 +1,148 @@
+/* FOOTER – Premium Cairo 2025 Design */
+.footer {
+  max-width: 100%;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #e2e8f0;
+  padding: 20px 20px 30px;
+  font-family: system-ui, -apple-system, sans-serif;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.footer-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 220px;
+  flex-wrap: wrap;
+}
+
+/* Logo + Brand Section */
+/* Logo + BuyBye Title – Horizontal Layout */
+.footer-brand-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 300px;
+}
+
+.footer-logo {
+  width: 90px;
+  height: 90px;
+  background: url("../img/logo.png") no-repeat center;
+  background-size: contain;
+  flex-shrink: 0;
+}
+
+.footer-brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.footer-brand-name {
+  font-size: 36px;
+  font-weight: 900;
+  margin: 0;
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -1px;
+  line-height: 1;
+  font-family: serif;
+}
+
+.footer-tagline {
+  font-size: 15px;
+  color: #94a3b8;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Links Grid */
+.footer-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  flex: 2;
+}
+
+.footer-heading {
+  font-size: 17px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 16px;
+  letter-spacing: -0.2px;
+}
+
+.footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer-link {
+  color: #cbd5e1;
+  font-size: 15px;
+  text-decoration: none;
+  transition: all 0.22s ease;
+  padding: 4px 0;
+}
+
+.footer-link:hover {
+  color: #fbbf24;
+  transform: translateX(6px);
+}
+
+/* Bottom Bar */
+.footer-bottom {
+  max-width: 1280px;
+  margin: 60px auto 0;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+.footer-social {
+  display: flex;
+  gap: 20px;
+  font-size: 20px;
+}
+
+.footer-social a {
+  color: #94a3b8;
+  transition: color 0.2s;
+}
+
+.footer-social a:hover {
+  color: #fbbf24;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .footer-inner {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .footer-brand-section {
+    align-items: center;
+  }
+  
+  .footer-links {
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+  }
+  
+  .footer-bottom {
+    flex-direction: column;
+    text-align: center;
+  }
+}
