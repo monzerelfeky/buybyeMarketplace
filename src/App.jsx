@@ -68,6 +68,7 @@ import OrderTrackingPage from "./pages/OrderTrackingPage";
 
 //Notifications Page
 import NotificationsPage from "./pages/NotificationsPage";
+import SellerNotificationsPage from "./pages/SellerNotificationsPage";
 
 
 
@@ -126,6 +127,7 @@ export default function App({ favorites, toggleFavorite }) {
             <Route path="/seller/orders" element={<OrdersList />} />
             <Route path="/seller/flags" element={<SellerFlags />} />
             <Route path="/seller/delivery" element={<ServiceabilitySettings />} />
+            <Route path="/seller/notifications" element={<SellerNotificationsPage />} />
 
             {/* Buyer Routes*/}
             <Route path="/buyer/profile-settings" element={<BuyerProfileSettings />} />

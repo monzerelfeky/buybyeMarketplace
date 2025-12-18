@@ -246,4 +246,15 @@
   transform: translateY(-1px); 
 }
 
+.bps-btn.logout-btn {
+  background: #dc2626; /* red */
+  border-color: #dc2626;
+  color: #fff;
+}
+
+.bps-btn.logout-btn:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
 

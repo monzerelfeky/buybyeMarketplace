@@ -15,6 +15,7 @@ const flagsRoutes = require('./routes/flags');
 const notificationsRoutes = require('./routes/notifications');
 const userRoutes = require('./routes/userRoutes');
 const sellersRoutes = require('./routes/sellers');
+const errorHandler = require('./middlewares/errorHandler');
 
 
 const app = express();
@@ -37,9 +38,10 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/sellers', sellersRoutes);
 
-
-
 app.get('/', (req, res) => res.send('Marketplace API'));
+
+// Fallback / error handling
+app.use(errorHandler);
 
 const start = async () => {
   await connectDB();

@@ -9,6 +9,7 @@ export default function SidePanel({
   navigate,
   onCreateItem,
   onBecomeSeller,
+  isLoggedIn = false,
 }) {
   // Hooks MUST always be at the top
   const [openCategory, setOpenCategory] = useState(null);
@@ -75,6 +76,13 @@ export default function SidePanel({
 
               <button
                 className="side-panel-link"
+                onClick={() => navigate("/notifications")}
+              >
+                Notifications
+              </button>
+
+              <button
+                className="side-panel-link"
                 onClick={() => {
                   navigate("/seller/items");
                   onClose();
@@ -91,6 +99,16 @@ export default function SidePanel({
                 }}
               >
                 Orders
+              </button>
+
+              <button
+                className="side-panel-link"
+                onClick={() => {
+                  navigate("/seller/notifications");
+                  onClose();
+                }}
+              >
+                Notifications
               </button>
 
               <button
@@ -134,20 +152,23 @@ export default function SidePanel({
               >
                 + Create Item
               </button>
-              <div className="bps-logout-wrapper">
-                             <button
-                                    className="bps-btn"
-                                    onClick={() => {
-                                    localStorage.removeItem('authToken');
-                                    localStorage.removeItem('user');
-                                    localStorage.removeItem('rememberMe');
-                                    localStorage.removeItem('rememberedEmail');
-                                    window.location.href = "/"; // redirect to homepage
-                                    }}
-                                >
-                                    Logout
-                                </button>
-                            </div>
+              {isLoggedIn && (
+                <div className="bps-logout-wrapper">
+                  <button
+                    className="bps-btn logout-btn"
+                    onClick={() => {
+                      localStorage.removeItem('authToken');
+                      localStorage.removeItem('user');
+                      localStorage.removeItem('rememberMe');
+                      localStorage.removeItem('rememberedEmail');
+                      window.dispatchEvent(new Event('auth-changed'));
+                      window.location.href = "/"; // redirect to homepage
+                    }}
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
             </>
           ) : (
             /* ============================  
@@ -269,20 +290,23 @@ export default function SidePanel({
                 );
               })}
               <hr/>
-              <div className="bps-logout-wrapper">
-                             <button
-                                    className="bps-btn"
-                                    onClick={() => {
-                                    localStorage.removeItem('authToken');
-                                    localStorage.removeItem('user');
-                                    localStorage.removeItem('rememberMe');
-                                    localStorage.removeItem('rememberedEmail');
-                                    window.location.href = "/"; // redirect to homepage
-                                    }}
-                                >
-                                    Logout
-                                </button>
-                            </div>
+              {isLoggedIn && (
+                <div className="bps-logout-wrapper">
+                  <button
+                    className="bps-btn logout-btn"
+                    onClick={() => {
+                      localStorage.removeItem('authToken');
+                      localStorage.removeItem('user');
+                      localStorage.removeItem('rememberMe');
+                      localStorage.removeItem('rememberedEmail');
+                      window.dispatchEvent(new Event('auth-changed'));
+                      window.location.href = "/"; // redirect to homepage
+                    }}
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>

@@ -3,8 +3,8 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import "../styles/NotificationsPage.css";
 
-// Buyer notifications page (shows buyer notifications only)
-export default function NotificationsPage() {
+// Seller notifications page: shows all notifications (buyer + seller context)
+export default function SellerNotificationsPage() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [serverError, setServerError] = useState("");
@@ -32,11 +32,7 @@ export default function NotificationsPage() {
           setServerError(data.message || "Failed to fetch notifications");
           setNotifications([]);
         } else {
-          // Optionally filter to buyer-facing notifications only (type contains 'buyer')
-          const buyerOnly = Array.isArray(data)
-            ? data.filter((n) => n.type?.toLowerCase().includes("buyer"))
-            : [];
-          setNotifications(buyerOnly);
+          setNotifications(Array.isArray(data) ? data : []);
         }
       } catch (err) {
         console.error("Fetch notifications error:", err);
@@ -71,7 +67,7 @@ export default function NotificationsPage() {
       <Header />
 
       <div className="notifications-container">
-        <h2 className="notifications-title">Notifications & Inbox</h2>
+        <h2 className="notifications-title">Seller Notifications</h2>
 
         {loading ? (
           <p>Loading notifications...</p>

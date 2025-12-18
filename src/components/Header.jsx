@@ -1,5 +1,5 @@
   // src/components/Header.jsx
-  import React, { useState } from "react";
+  import React, { useState, useEffect } from "react";
   import { useLocation, useNavigate } from "react-router-dom";
   import "../styles/Header.css";
   import UniversalModal from "./popups/UniversalModal";
@@ -24,7 +24,7 @@
     const location = useLocation();
     const navigate = useNavigate();
 
-    const { addItem } = useSeller();
+    const { addItem, refresh } = useSeller();
 
     // Check if user is logged in (re-evaluates when authRefresh changes)
     const isLoggedIn = !!localStorage.getItem('authToken');
@@ -47,11 +47,26 @@
       localStorage.removeItem('user');
       localStorage.removeItem('rememberMe');
       localStorage.removeItem('rememberedEmail');
+      window.dispatchEvent(new Event('auth-changed'));
       setAuthRefresh((p) => p + 1);
       // Close any open panels
       setIsCartOpen(false);
       setIsSidePanelOpen(false);
     };
+
+    // Keep header and seller context in sync when auth changes (storage or custom event)
+    useEffect(() => {
+      const handleAuthChange = () => {
+        setAuthRefresh((p) => p + 1);
+        refresh();
+      };
+      window.addEventListener('auth-changed', handleAuthChange);
+      window.addEventListener('storage', handleAuthChange);
+      return () => {
+        window.removeEventListener('auth-changed', handleAuthChange);
+        window.removeEventListener('storage', handleAuthChange);
+      };
+    }, [refresh]);
 
     // SEARCH HANDLERS
     const handleSearch = () => {
@@ -63,7 +78,16 @@
       if (e.key === "Enter") handleSearch();
     };
 
-    return (
+  // Require login before allowing seller-only actions/navigation
+  const ensureLoggedIn = () => {
+    if (!isLoggedIn) {
+      setIsLoginOpen(true);
+      return false;
+    }
+    return true;
+  };
+
+  return (
       <>
         <header className={`header ${isSellerPage ? "seller-mode" : ""}`}>
           <div className="header-inner">
@@ -101,7 +125,13 @@
                   </button>
                 )}
 
-                <button className="post-btn" onClick={() => setIsBecomeSellerOpen(true)}>
+                <button
+                  className="post-btn"
+                  onClick={() => {
+                    if (!ensureLoggedIn()) return;
+                    setIsBecomeSellerOpen(true);
+                  }}
+                >
                   Post Ad
                 </button>
 
@@ -124,7 +154,10 @@
 
                 <button
                   className="seller-create-btn"
-                  onClick={() => setIsCreateItemOpen(true)}
+                  onClick={() => {
+                    if (!ensureLoggedIn()) return;
+                    setIsCreateItemOpen(true);
+                  }}
                 >
                   + Create Item
                 </button>
@@ -201,7 +234,11 @@
           navigate={navigate}
           categories={categories}
           onCreateItem={() => setIsCreateItemOpen(true)}
-          onBecomeSeller={() => setIsBecomeSellerOpen(true)}
+          onBecomeSeller={() => {
+            if (!ensureLoggedIn()) return;
+            setIsBecomeSellerOpen(true);
+          }}
+          isLoggedIn={isLoggedIn}
         />
 
         {/* LOGIN MODAL */}
@@ -210,12 +247,17 @@
           onClose={() => {
             setIsLoginOpen(false);
             setAuthRefresh(prev => prev + 1); // trigger re-render to check auth state
+            refresh();
           }}
           type="login"
         >
           <LoginContent onClose={() => {
             setIsLoginOpen(false);
             setAuthRefresh(prev => prev + 1);
+            refresh();
+          }} onLoginSuccess={() => {
+            setAuthRefresh(prev => prev + 1);
+            refresh();
           }} />
         </UniversalModal>
 

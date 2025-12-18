@@ -35,6 +35,14 @@ function getStoredSellerId() {
   }
 }
 
+function getAuthHeaders(includeJson = false) {
+  const token = localStorage.getItem('authToken');
+  const headers = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  if (includeJson) headers['Content-Type'] = 'application/json';
+  return headers;
+}
+
 export function SellerProvider({ children }) {
   // start with empty lists; populate from backend on mount
   const [orders, setOrders] = useState([]);
@@ -57,7 +65,7 @@ export function SellerProvider({ children }) {
       console.debug('[SellerContext] fetching items from', `${API}/api/items${qs}`);
       setLoading((l) => ({ ...l, items: true }));
       try {
-        const res = await fetch(`${API}/api/items${qs}`);
+        const res = await fetch(`${API}/api/items${qs}`, { headers: getAuthHeaders() });
         console.debug('[SellerContext] items response status', res.status);
         if (!res.ok) throw new Error(`Failed to load items (status ${res.status})`);
         const data = await res.json();
@@ -82,7 +90,7 @@ export function SellerProvider({ children }) {
       console.debug('[SellerContext] fetching orders from', `${API}/api/orders${qs}`);
       setLoading((l) => ({ ...l, orders: true }));
       try {
-        const res = await fetch(`${API}/api/orders${qs}`);
+        const res = await fetch(`${API}/api/orders${qs}`, { headers: getAuthHeaders() });
         console.debug('[SellerContext] orders response status', res.status);
           if (!res.ok) throw new Error(`Failed to load orders (status ${res.status})`);
           const data = await res.json();
@@ -123,7 +131,7 @@ export function SellerProvider({ children }) {
 
       const res = await fetch(url, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(true),
         body: JSON.stringify(
           onlyStatus
             ? { status: backendUpdates.status, note: backendUpdates.note || '' }
@@ -163,7 +171,7 @@ export function SellerProvider({ children }) {
         console.debug('[SellerContext] Payload with', imageStrings.length, 'images');
         const res = await fetch(`${API}/api/items`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(true),
           body: JSON.stringify(itemWithImages)
         });
         console.debug('[SellerContext] Create response status:', res.status);
@@ -220,7 +228,7 @@ export function SellerProvider({ children }) {
       console.debug('[SellerContext] Updating item:', itemId, 'with', allImages.length, 'images');
       const res = await fetch(`${API}/api/items/${itemId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(true),
         body: JSON.stringify(backendUpdates)
       });
       console.debug('[SellerContext] Update response status:', res.status);
@@ -241,7 +249,7 @@ export function SellerProvider({ children }) {
     // optimistic
     setItems((prev) => prev.filter((it) => it.id !== itemId));
     try {
-      await fetch(`${API}/api/items/${itemId}`, { method: 'DELETE' });
+      await fetch(`${API}/api/items/${itemId}`, { method: 'DELETE', headers: getAuthHeaders() });
     } catch (err) {
       console.warn('Failed to delete item on server', err.message);
     }
@@ -262,7 +270,7 @@ export function SellerProvider({ children }) {
     setLoading((l) => ({ ...l, flags: true }));
     try {
       const params = new URLSearchParams({ storeId: sellerId });
-      const res = await fetch(`${API}/api/flags?${params.toString()}`);
+      const res = await fetch(`${API}/api/flags?${params.toString()}`, { headers: getAuthHeaders() });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to load flags');
       if (Array.isArray(data)) {
@@ -292,7 +300,7 @@ export function SellerProvider({ children }) {
     try {
       const res = await fetch(`${API}/api/flags`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(true),
         body: JSON.stringify(payload)
       });
       const data = await res.json();
@@ -316,7 +324,7 @@ export function SellerProvider({ children }) {
     try {
       const res = await fetch(`${API}/api/flags/${flagId}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(true),
         body: JSON.stringify({ status, adminNotes })
       });
       const data = await res.json();
@@ -335,7 +343,7 @@ export function SellerProvider({ children }) {
     if (!sellerId) return;
     setLoading((l) => ({ ...l, serviceAreas: true }));
     try {
-      const res = await fetch(`${API}/api/sellers/${sellerId}/service-areas`);
+      const res = await fetch(`${API}/api/sellers/${sellerId}/service-areas`, { headers: getAuthHeaders() });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to load service areas');
       setServiceAreas(Array.isArray(data) ? data : []);
@@ -354,7 +362,7 @@ export function SellerProvider({ children }) {
     try {
       const res = await fetch(`${API}/api/sellers/${sellerId}/service-areas`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(true),
         body: JSON.stringify({ serviceAreas: areas })
       });
       const data = await res.json();
@@ -375,10 +383,13 @@ export function SellerProvider({ children }) {
       setLoading((l) => ({ ...l, items: true, orders: true }));
       try {
         const sellerId = sellerIdRef.current || getStoredSellerId();
+        if (sellerId && sellerIdRef.current !== sellerId) {
+          sellerIdRef.current = sellerId;
+        }
         const qs = sellerId ? `?sellerId=${encodeURIComponent(sellerId)}` : '';
         const [rit, ror] = await Promise.all([
-          fetch(`${API}/api/items${qs}`).then((r) => r.json()),
-          fetch(`${API}/api/orders${qs}`).then((r) => r.json())
+          fetch(`${API}/api/items${qs}`, { headers: getAuthHeaders() }).then((r) => r.json()),
+          fetch(`${API}/api/orders${qs}`, { headers: getAuthHeaders() }).then((r) => r.json())
         ]);
         if (Array.isArray(rit)) setItems(rit.map((it) => ({ ...it, id: it._id || it.id })));
         if (Array.isArray(ror)) setOrders(ror.map((o) => ({ ...o, id: o._id || o.id })));
@@ -395,6 +406,23 @@ export function SellerProvider({ children }) {
       fetchServiceAreasForSeller(sellerId);
     }
   };
+
+  // React to auth changes (login/logout) globally so seller views stay in sync
+  useEffect(() => {
+    const handleAuthChange = () => {
+      // Update cached seller id and refresh scoped data
+      const nextSellerId = getStoredSellerId();
+      if (nextSellerId) sellerIdRef.current = nextSellerId;
+      refresh();
+    };
+
+    window.addEventListener('auth-changed', handleAuthChange);
+    window.addEventListener('storage', handleAuthChange);
+    return () => {
+      window.removeEventListener('auth-changed', handleAuthChange);
+      window.removeEventListener('storage', handleAuthChange);
+    };
+  }, [refresh]);
 
   // Derive seller id once we have either auth data or orders
   useEffect(() => {

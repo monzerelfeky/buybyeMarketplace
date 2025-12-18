@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import "../../styles/Login.css";
 
-export default function LoginContent({ onClose }) {
+export default function LoginContent({ onClose, onLoginSuccess }) {
   const [showPassword, setShowPassword] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -95,6 +95,7 @@ export default function LoginContent({ onClose }) {
       if (data.token) {
         localStorage.setItem('authToken', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        window.dispatchEvent(new Event('auth-changed'));
         
         // Store remember me preference
         if (rememberMe) {
@@ -103,6 +104,8 @@ export default function LoginContent({ onClose }) {
         }
       }
 
+      // Notify host about successful auth (refresh data, rerender)
+      onLoginSuccess?.();
       // Close modal
       onClose?.();
     } catch (err) {
