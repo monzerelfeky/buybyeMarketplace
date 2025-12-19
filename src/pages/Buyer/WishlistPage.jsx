@@ -1,59 +1,55 @@
 // pages/Buyer/WishlistPage.jsx
-import React, { useState, useEffect } from "react";
-import Header from "../../components/Header";
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import Footer from "../../components/Footer";
-import ProductCard from "../../components/ProductCard";
-import { getWishlist } from "../../utils/wishlist";
+import Header from "../../components/Header";
+import { getWishlist, removeFromWishlist } from "../../utils/wishlist";
+import "../../styles/HomePage.css";
+import "../../styles/Listings.css";
 import "../../styles/Wishlist.css";
 
 export default function WishlistPage() {
   const [wishlistItems, setWishlistItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // For now we use mock data
-  const mockItems = [
-    {
-      id: "1",
-      title: "iPhone 15 Pro Max 256GB",
-      price: 48500,
-      image: "/images/iphone15.jpg",
-      time: "2 hours ago",
-    },
-    {
-      id: "2",
-      title: "Toyota Corolla 2023",
-      price: 985000,
-      image: "/images/corolla2023.jpg",
-      time: "5 hours ago",
-    },
-    {
-      id: "3",
-      title: "Studio Apartment – New Cairo",
-      price: 12000,
-      image: "/images/studio.jpg",
-      time: "1 day ago",
-    },
-  ];
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
-  useEffect(() => {
-    async function fetchWishlist() {
-      try {
-        // In the future, getWishlist will fetch real items from backend
-        const data = await getWishlist();
-        console.log("Wishlist from backend:", data);
-
-        // For now, just use mock items
-        setWishlistItems(mockItems);
-      } catch (err) {
-        console.error("Failed to fetch wishlist:", err);
-        setWishlistItems(mockItems);
-      } finally {
-        setLoading(false);
-      }
+  const fetchWishlist = async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      setWishlistItems([]);
+      setLoading(false);
+      return;
     }
 
+    try {
+      const data = await getWishlist();
+      setWishlistItems(data);
+    } catch (err) {
+      console.error("Failed to fetch wishlist:", err);
+      setWishlistItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchWishlist();
+    const handleAuthChanged = () => fetchWishlist();
+    window.addEventListener("auth-changed", handleAuthChanged);
+    return () => window.removeEventListener("auth-changed", handleAuthChanged);
   }, []);
+
+  const handleRemove = async (itemId, e) => {
+    e.stopPropagation();
+    try {
+      await removeFromWishlist(itemId);
+      setWishlistItems((prev) => prev.filter((item) => item._id !== itemId));
+    } catch (err) {
+      console.error("Failed to remove from wishlist:", err);
+    }
+  };
+
 
   return (
     <div className="wishlist-page">
@@ -61,8 +57,36 @@ export default function WishlistPage() {
       <div className="header-spacer" />
 
       <section className="wishlist-section">
-        <h1 className="wishlist-main-title">Your Wishlist</h1>
-        {wishlistItems.length === 0 && !loading ? (
+
+        <div className="wishlist-header-wrapper">
+          <div className="wishlist-header">
+            <div>
+              <h1 className="wishlist-main-title">Your Wishlist</h1>
+              {wishlistItems.length > 0 && (
+                <p className="wishlist-count">
+                  {wishlistItems.length}{" "}
+                  {wishlistItems.length === 1 ? "item" : "items"} saved
+                </p>
+              )}
+            </div>
+            <Link to="/" className="wishlist-back-link">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+              Back to Home
+            </Link>
+          </div>
+        </div>
+
+        {!loading && wishlistItems.length === 0 ? (
+
           <div className="wishlist-empty">
             <div className="wishlist-empty-icon">
               <svg
@@ -84,14 +108,59 @@ export default function WishlistPage() {
         ) : (
           <div className="wishlist-grid">
             {wishlistItems.map((item) => (
-              <ProductCard
-                key={item.id}
-                id={item.id}
-                title={item.title}
-                price={item.price}
-                image={item.image}
-                time={item.time}
-              />
+
+              <article key={item._id} className="listing-card">
+                <div className="listing-image">
+                  <div className="image-placeholder">
+                    {item.images?.[0] ? (
+                      <img
+                        src={`${API_BASE}${item.images[0]}`}
+                        alt={item.title}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    ) : null}
+                  </div>
+
+                  <button
+                    className="favorite-heart-btn favorited"
+                    onClick={(e) => handleRemove(item._id, e)}
+                    aria-label="Remove from favorites"
+                  >
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="heart-outline"
+                    >
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    </svg>
+                    <span className="heart-filled">💚</span>
+                  </button>
+                </div>
+
+                <div className="listing-body">
+                  <h3 className="listing-title">{item.title}</h3>
+                  <p className="listing-price">
+                    EGP {Number(item.price || 0).toLocaleString()}
+                  </p>
+                  <div className="listing-meta">
+                    <span className="listing-location">
+                      {item.category || "Category"}
+                    </span>
+                    <span className="listing-time">Saved item</span>
+                  </div>
+                </div>
+              </article>
+
             ))}
           </div>
         )}

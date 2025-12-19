@@ -14,6 +14,8 @@ import ServiceabilitySettings from "./components/seller/ServiceabilitySettings";
 //Buyer Pages 
 import BuyerProfileSettings from "./pages/BuyerProfileSettings";
 import WishlistPage from "./pages/Buyer/WishlistPage";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 // About
 import OurStory from "./pages/about/OurStory";
@@ -120,6 +122,8 @@ export default function App() {
         {/* Buyer Routes*/}
         <Route path="/buyer/profile-settings" element={<BuyerProfileSettings />} />
         <Route path="/wishlist" element={<WishlistPage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/*Checkout Route*/}
         <Route path="/checkout" element={<CheckoutPage />} />
