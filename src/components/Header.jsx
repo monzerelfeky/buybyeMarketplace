@@ -20,6 +20,7 @@
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [authRefresh, setAuthRefresh] = useState(0); // trigger re-render after login
+    const [currentUser, setCurrentUser] = useState(null);
     const lastInputAtRef = useRef(0);
 
     const location = useLocation();
@@ -29,6 +30,7 @@
 
     // Check if user is logged in (re-evaluates when authRefresh changes)
     const isLoggedIn = !!localStorage.getItem('authToken');
+    const isSeller = !!currentUser?.isSeller;
 
     const categories = ["Cars", "Real Estate", "Mobiles", "Jobs", "Electronics", "Home & Garden"];
 
@@ -57,17 +59,58 @@
 
     // Keep header and seller context in sync when auth changes (storage or custom event)
     useEffect(() => {
+      const loadUserFromStorage = () => {
+        const raw = localStorage.getItem("user");
+        if (!raw) {
+          setCurrentUser(null);
+          return;
+        }
+        try {
+          setCurrentUser(JSON.parse(raw));
+        } catch {
+          setCurrentUser(null);
+        }
+      };
+
+      const fetchUserFromApi = async () => {
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+          setCurrentUser(null);
+          return;
+        }
+        try {
+          const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+          const res = await fetch(`${API_BASE}/api/users/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (!res.ok) throw new Error("Profile fetch failed");
+          const data = await res.json();
+          const stored = localStorage.getItem("user");
+          const storedUser = stored ? JSON.parse(stored) : {};
+          const nextUser = { ...storedUser, ...data };
+          localStorage.setItem("user", JSON.stringify(nextUser));
+          setCurrentUser(nextUser);
+        } catch (err) {
+          console.error("Failed to refresh user profile:", err);
+        }
+      };
+
       const handleAuthChange = () => {
         setAuthRefresh((p) => p + 1);
         refresh();
+        loadUserFromStorage();
+        fetchUserFromApi();
       };
-      window.addEventListener('auth-changed', handleAuthChange);
-      window.addEventListener('storage', handleAuthChange);
+
+      loadUserFromStorage();
+      if (isLoggedIn) fetchUserFromApi();
+      window.addEventListener("auth-changed", handleAuthChange);
+      window.addEventListener("storage", handleAuthChange);
       return () => {
-        window.removeEventListener('auth-changed', handleAuthChange);
-        window.removeEventListener('storage', handleAuthChange);
+        window.removeEventListener("auth-changed", handleAuthChange);
+        window.removeEventListener("storage", handleAuthChange);
       };
-    }, [refresh]);
+    }, [authRefresh, isLoggedIn, refresh]);
 
     // SEARCH HANDLERS
     const handleSearch = () => {
@@ -169,6 +212,10 @@
                   className="post-btn"
                   onClick={() => {
                     if (!ensureLoggedIn()) return;
+                    if (isSeller) {
+                      navigate("/seller/dashboard");
+                      return;
+                    }
                     setIsBecomeSellerOpen(true);
                   }}
                 >
@@ -281,6 +328,7 @@
             setIsBecomeSellerOpen(true);
           }}
           isLoggedIn={isLoggedIn}
+          isSeller={isSeller}
         />
 
         {/* LOGIN MODAL */}
@@ -325,7 +373,33 @@
           onClose={() => setIsBecomeSellerOpen(false)}
           type="become-seller"
         >
-          <BecomeSellerContent onConfirm={() => navigate("/seller/dashboard")} />
+          <BecomeSellerContent
+            onConfirm={async () => {
+              const token = localStorage.getItem("authToken");
+              if (!token) return;
+              try {
+                const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+                const res = await fetch(`${API_BASE}/api/users/me/seller`, {
+                  method: "PATCH",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                  },
+                  body: JSON.stringify({ isSeller: true }),
+                });
+                if (!res.ok) throw new Error("Failed to update seller status");
+                const data = await res.json();
+                const nextUser = { ...currentUser, ...data };
+                localStorage.setItem("user", JSON.stringify(nextUser));
+                setCurrentUser(nextUser);
+                window.dispatchEvent(new Event("auth-changed"));
+                setIsBecomeSellerOpen(false);
+                navigate("/seller/dashboard");
+              } catch (err) {
+                console.error("Failed to activate seller account:", err);
+              }
+            }}
+          />
         </UniversalModal>
 
         <CartPanel 

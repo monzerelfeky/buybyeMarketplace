@@ -14,7 +14,28 @@ function ensureSingleDefault(list, defaultIndex) {
 
 exports.getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('name email phone');
+    const user = await User.findById(req.user.id).select('name email phone isSeller');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    return res.json(user);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.updateSellerStatus = async (req, res) => {
+  try {
+    const { isSeller } = req.body;
+    if (typeof isSeller !== 'boolean') {
+      return res.status(400).json({ message: 'isSeller must be boolean' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { isSeller, updatedAt: new Date() },
+      { new: true }
+    ).select('name email phone isSeller');
+
     if (!user) return res.status(404).json({ message: 'User not found' });
     return res.json(user);
   } catch (err) {

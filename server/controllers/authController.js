@@ -36,7 +36,7 @@
       const ok = await bcrypt.compare(password, user.passwordHash);
       if (!ok) return res.status(401).json({ message: 'Invalid credentials' });
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'devsecret', { expiresIn: '7d' });
-      res.json({ token, user: { id: user._id, _id: user._id, email: user.email, name: user.name } });
+      res.json({ token, user: { id: user._id, _id: user._id, email: user.email, name: user.name, isSeller: user.isSeller } });
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: 'Server error' });
@@ -91,7 +91,7 @@
       }
 
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'devsecret', { expiresIn: '7d' });
-      res.json({ token, user: { id: user._id, _id: user._id, email: user.email, name: user.name } });
+      res.json({ token, user: { id: user._id, _id: user._id, email: user.email, name: user.name, isSeller: user.isSeller } });
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: 'Server error' });
