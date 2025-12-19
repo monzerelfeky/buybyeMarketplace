@@ -1,19 +1,122 @@
-// components/Listings.jsx
+// pages/Buyer/WishlistPage.jsx
 import React, { useState, useEffect } from "react";
-import { getWishlist, addToWishlist, removeFromWishlist } from "../utils/wishlist";
+import { Link } from "react-router-dom";
+import Footer from "./Footer";
+import Header from "./Header";
+import "../styles/HomePage.css";
 import "../styles/Listings.css";
+import "../styles/Wishlist.css";
+import { getWishlist, addToWishlist, removeFromWishlist } from "../utils/wishlist";
 
-export default function Listings({ items = [] }) {
-  const [wishlistIds, setWishlistIds] = useState([]);
+export default function WishlistPage() {
+  const [favorites, setFavorites] = useState({}); // Tracks wishlist items (_id => true)
   const [loading, setLoading] = useState(true);
 
-  // Your mock listing data (fallback)
-  const mockListings = [
+  // Helper: Load guest wishlist from localStorage
+  const getLocalWishlist = () => {
+    try {
+      const localData = localStorage.getItem("guestWishlist");
+      return localData ? JSON.parse(localData) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  // Helper: Save guest wishlist to localStorage
+  const setLocalWishlist = (wishlistIds) => {
+    localStorage.setItem("guestWishlist", JSON.stringify(wishlistIds));
+  };
+
+  // Fetch wishlist on mount
+  useEffect(() => {
+    async function fetchWishlist() {
+      const token = localStorage.getItem("authToken");
+      let wishlistFromDb = [];
+
+      if (token) {
+        // Logged-in: fetch from backend
+        try {
+          wishlistFromDb = await getWishlist(); // [{ _id: "1", ...}, ...]
+        } catch (err) {
+          console.error("Failed to fetch wishlist from DB:", err);
+        }
+      }
+
+      // Always get guest wishlist from localStorage
+      const guestWishlist = getLocalWishlist();
+
+      // Merge backend and guest wishlist (avoid duplicates)
+      const mergedIds = Array.from(
+        new Set([...wishlistFromDb.map((i) => i._id), ...guestWishlist])
+      );
+
+      // Sync guest wishlist to backend if logged-in
+      if (token) {
+        for (let id of mergedIds) {
+          if (!wishlistFromDb.find((item) => item._id === id)) {
+            try {
+              await addToWishlist(id);
+            } catch (err) {
+              console.error("Failed to sync local wishlist to DB:", err);
+            }
+          }
+        }
+        localStorage.removeItem("guestWishlist"); // clear after merge
+      } else {
+        // Save merged guest wishlist
+        setLocalWishlist(mergedIds);
+      }
+
+      // Update state for rendering
+      const favoritesMap = {};
+      mergedIds.forEach((id) => (favoritesMap[id] = true));
+      setFavorites(favoritesMap);
+      setLoading(false);
+    }
+
+    fetchWishlist();
+  }, []);
+
+  // Toggle wishlist item (same logic as Listings.jsx)
+  const toggleFavorite = async (_id) => {
+    const token = localStorage.getItem("authToken");
+
+    if (favorites[_id]) {
+      // Remove
+      setFavorites((prev) => {
+        const copy = { ...prev };
+        delete copy[_id];
+        return copy;
+      });
+
+      if (token) {
+        await removeFromWishlist(_id);
+      } else {
+        const guestWishlist = getLocalWishlist().filter((id) => id !== _id);
+        setLocalWishlist(guestWishlist);
+      }
+    } else {
+      // Add
+      setFavorites((prev) => ({ ...prev, [_id]: true }));
+
+      if (token) {
+        await addToWishlist(_id);
+      } else {
+        const guestWishlist = getLocalWishlist();
+        guestWishlist.push(_id);
+        setLocalWishlist(guestWishlist);
+      }
+    }
+  };
+
+  // Mock listings using `_id` to match backend
+  const listings = [
     {
       _id: "1",
       title: "iPhone 15 Pro Max 256GB",
       price: 48500,
-      category: "Electronics",
+      category: "Mobiles",
+      location: "Nasr City",
       deliveryEstimate: "2 hours ago",
     },
     {
@@ -21,6 +124,7 @@ export default function Listings({ items = [] }) {
       title: "Toyota Corolla 2023",
       price: 985000,
       category: "Cars",
+      location: "Maadi",
       deliveryEstimate: "5 hours ago",
     },
     {
@@ -28,6 +132,7 @@ export default function Listings({ items = [] }) {
       title: "Studio Apartment – New Cairo",
       price: 12000,
       category: "Real Estate",
+      location: "5th Settlement",
       deliveryEstimate: "1 day ago",
     },
     {
@@ -35,126 +140,80 @@ export default function Listings({ items = [] }) {
       title: "MacBook Air M2 2023",
       price: 62900,
       category: "Electronics",
+      location: "Heliopolis",
       deliveryEstimate: "3 hours ago",
     },
   ];
 
-  // Use real items if provided, otherwise use mock data
-  const displayItems = items.length > 0 ? items : mockListings;
-
-  // Fetch wishlist on mount
-  useEffect(() => {
-    async function fetchWishlist() {
-      try {
-        const token = localStorage.getItem("authToken");
-        if (!token) {
-          setLoading(false);
-          return;
-        }
-
-        const data = await getWishlist();
-        setWishlistIds(data.map(item => item._id));
-      } catch (err) {
-        console.error("Failed to fetch wishlist:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchWishlist();
-  }, []);
-
-  const handleToggleWishlist = async (itemId, e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      alert("Please login to use wishlist");
-      return;
-    }
-
-    try {
-      if (wishlistIds.includes(itemId)) {
-        await removeFromWishlist(itemId);
-        setWishlistIds(wishlistIds.filter(id => id !== itemId));
-      } else {
-        await addToWishlist(itemId);
-        setWishlistIds([...wishlistIds, itemId]);
-      }
-    } catch (err) {
-      console.error("Wishlist error:", err);
-      alert("Failed to update wishlist. Please try again.");
-    }
-  };
-
-  const isInWishlist = (itemId) => wishlistIds.includes(itemId);
+  const favoriteListings = listings.filter((item) => favorites[item._id]);
 
   return (
-    <section className="listings-section">
-      <div className="listings-header">
-        <h2 className="listings-title">Latest Listings</h2>
-      </div>
+    <div className="homepage-container">
+      <Header />
+      <div className="header-spacer" />
 
-      <div className="listings-grid">
-        {displayItems.map((item) => (
-          <article key={item._id} className="listing-card">
-            <div className="listing-image">
-              <div className="image-placeholder">
-                {item.images?.[0] ? (
-                  <img 
-                    src={`http://localhost:5000${item.images[0]}`} 
-                    alt={item.title}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                ) : null}
-              </div>
-
-              {/* Favorite Button */}
-              <button
-                className={`favorite-heart-btn ${
-                  isInWishlist(item._id) ? "favorited" : ""
-                }`}
-                onClick={(e) => handleToggleWishlist(item._id, e)}
-                disabled={loading}
-                aria-label={
-                  isInWishlist(item._id)
-                    ? "Remove from favorites"
-                    : "Add to favorites"
-                }
-              >
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="heart-outline"
-                >
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                </svg>
-
-                <span className="heart-filled">💚</span>
-              </button>
+      <section className="wishlist-section">
+        <div className="wishlist-header-wrapper">
+          <div className="wishlist-header">
+            <div>
+              <h1 className="wishlist-main-title">Your Wishlist</h1>
+              {favoriteListings.length > 0 && (
+                <p className="wishlist-count">
+                  {favoriteListings.length}{" "}
+                  {favoriteListings.length === 1 ? "item" : "items"} saved
+                </p>
+              )}
             </div>
+            <Link to="/" className="wishlist-back-link">
+              Back to Home
+            </Link>
+          </div>
+        </div>
 
-            <div className="listing-body">
-              <h3 className="listing-title">{item.title}</h3>
-              <p className="listing-price">EGP {item.price.toLocaleString()}</p>
-              <div className="listing-meta">
-                <span className="listing-location">
-                  {item.category || "Category"}
-                </span>
-                <span className="listing-time">
-                  {item.deliveryEstimate || "Available"}
-                </span>
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
+        {favoriteListings.length === 0 ? (
+          <div className="wishlist-empty">
+            <h2>Your wishlist is empty</h2>
+          </div>
+        ) : (
+          <div className="wishlist-grid">
+            {favoriteListings.map((item) => (
+              <article key={item._id} className="listing-card">
+                <div className="listing-image">
+                  <div className="image-placeholder" />
+                  <button
+                    className={`favorite-heart-btn ${
+                      favorites[item._id] ? "favorited" : ""
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(item._id);
+                    }}
+                    disabled={loading}
+                    aria-label={
+                      favorites[item._id]
+                        ? "Remove from favorites"
+                        : "Add to favorites"
+                    }
+                  >
+                    💚
+                  </button>
+                </div>
+
+                <div className="listing-body">
+                  <h3 className="listing-title">{item.title}</h3>
+                  <p className="listing-price">EGP {item.price.toLocaleString()}</p>
+                  <div className="listing-meta">
+                    <span className="listing-location">{item.location}</span>
+                    <span className="listing-time">{item.deliveryEstimate}</span>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <Footer />
+    </div>
   );
 }
