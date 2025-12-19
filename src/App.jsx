@@ -14,6 +14,8 @@ import ServiceabilitySettings from "./components/seller/ServiceabilitySettings";
 //Buyer Pages 
 import BuyerProfileSettings from "./pages/BuyerProfileSettings";
 import WishlistPage from "./pages/Buyer/WishlistPage";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 // About
 import OurStory from "./pages/about/OurStory";
@@ -40,7 +42,6 @@ import SellerFees from "./pages/sell/SellerFees";
 import CartPage from "./pages/Buyer/CartPage";
 
 //Search Page
-import SearchPage from "./pages/Buyer/SearchPage";
 
 //Category Page
 import CategoryPage from "./pages/Buyer/CategoryPage";
@@ -100,8 +101,6 @@ export default function App() {
         {/* Cart Route */}
         <Route path="/cart" element={<CartPage />} />
 
-        {/* Search Route */}
-        <Route path="/search" element={<SearchPage />} />
 
         {/* Category Route */}
         <Route path="/category/:categoryName" element={<CategoryPage />} />
@@ -120,6 +119,8 @@ export default function App() {
         {/* Buyer Routes*/}
         <Route path="/buyer/profile-settings" element={<BuyerProfileSettings />} />
         <Route path="/wishlist" element={<WishlistPage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/*Checkout Route*/}
         <Route path="/checkout" element={<CheckoutPage />} />

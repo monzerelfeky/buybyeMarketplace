@@ -3,41 +3,12 @@ import React, { useState, useEffect } from "react";
 import { getWishlist, addToWishlist, removeFromWishlist } from "../utils/wishlist";
 import "../styles/Listings.css";
 
-export default function Listings({ items = [] }) {
+export default function Listings({ items = [], title, variant = "" }) {
   const [wishlistIds, setWishlistIds] = useState([]);
   const [loading, setLoading] = useState(true);
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
-  // Your mock listing data (fallback)
-  const mockListings = [
-    {
-      _id: "1",
-      title: "iPhone 15 Pro Max 256GB",
-      price: 48500,
-      category: "Electronics",
-      deliveryEstimate: "2 hours ago",
-    },
-    {
-      _id: "2",
-      title: "Toyota Corolla 2023",
-      price: 985000,
-      category: "Cars",
-      deliveryEstimate: "5 hours ago",
-    },
-    {
-      _id: "3",
-      title: "Studio Apartment – New Cairo",
-      price: 12000,
-      category: "Real Estate",
-      deliveryEstimate: "1 day ago",
-    },
-    {
-      _id: "4",
-      title: "MacBook Air M2 2023",
-      price: 62900,
-      category: "Electronics",
-      deliveryEstimate: "3 hours ago",
-    },
-  ];
+  
 
   // Use real items if provided, otherwise use mock data
   const displayItems = items.length > 0 ? items : mockListings;
@@ -89,11 +60,15 @@ export default function Listings({ items = [] }) {
 
   const isInWishlist = (itemId) => wishlistIds.includes(itemId);
 
+  const sectionClassName = `listings-section${variant ? ` listings-${variant}` : ""}`;
+
   return (
-    <section className="listings-section">
-      <div className="listings-header">
-        <h2 className="listings-title">Latest Listings</h2>
-      </div>
+    <section className={sectionClassName}>
+      {title ? (
+        <div className="listings-header">
+          <h2 className="listings-title">{title}</h2>
+        </div>
+      ) : null}
 
       <div className="listings-grid">
         {displayItems.map((item) => (
@@ -102,7 +77,7 @@ export default function Listings({ items = [] }) {
               <div className="image-placeholder">
                 {item.images?.[0] ? (
                   <img 
-                    src={`http://localhost:5000${item.images[0]}`} 
+                    src={`${API_BASE}${item.images[0]}`} 
                     alt={item.title}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
