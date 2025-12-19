@@ -32,6 +32,15 @@ export default function SidePanel({
     return <div className="side-panel-backdrop" />;
   }
 
+  const handleLogout = () => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
+    localStorage.removeItem("rememberMe");
+    localStorage.removeItem("rememberedEmail");
+    window.dispatchEvent(new Event("auth-changed"));
+    window.location.href = "/"; // redirect to homepage
+  };
+
   return (
     <div
       className={`side-panel-backdrop ${isOpen ? "open" : ""}`}
@@ -76,13 +85,6 @@ export default function SidePanel({
 
               <button
                 className="side-panel-link"
-                onClick={() => navigate("/notifications")}
-              >
-                Notifications
-              </button>
-
-              <button
-                className="side-panel-link"
                 onClick={() => {
                   navigate("/seller/items");
                   onClose();
@@ -101,6 +103,7 @@ export default function SidePanel({
                 Orders
               </button>
 
+              {/* keep only ONE notifications entry */}
               <button
                 className="side-panel-link"
                 onClick={() => {
@@ -152,19 +155,10 @@ export default function SidePanel({
               >
                 + Create Item
               </button>
+
               {isLoggedIn && (
                 <div className="bps-logout-wrapper">
-                  <button
-                    className="bps-btn logout-btn"
-                    onClick={() => {
-                      localStorage.removeItem('authToken');
-                      localStorage.removeItem('user');
-                      localStorage.removeItem('rememberMe');
-                      localStorage.removeItem('rememberedEmail');
-                      window.dispatchEvent(new Event('auth-changed'));
-                      window.location.href = "/"; // redirect to homepage
-                    }}
-                  >
+                  <button className="bps-btn logout-btn" onClick={handleLogout}>
                     Logout
                   </button>
                 </div>
@@ -175,6 +169,7 @@ export default function SidePanel({
                        BUYER MODE  
                ============================ */
             <>
+              {/* Guest + Logged-in can see */}
               <button
                 className="side-panel-link"
                 onClick={() => {
@@ -195,33 +190,44 @@ export default function SidePanel({
                 Wishlist
               </button>
 
-              <button
-                className="side-panel-link"
-                onClick={() => navigate("/order-history")}
-              >
-                My Orders
-              </button>
+              {/* Only logged-in users should see these */}
+              {isLoggedIn && (
+                <>
+                  <button
+                    className="side-panel-link"
+                    onClick={() => {
+                      navigate("/order-history");
+                      onClose();
+                    }}
+                  >
+                    My Orders
+                  </button>
 
-              <button
-                className="side-panel-link"
-                onClick={() => navigate("/notifications")}
-              >
-                Notifications
-              </button>
+                  <button
+                    className="side-panel-link"
+                    onClick={() => {
+                      navigate("/notifications");
+                      onClose();
+                    }}
+                  >
+                    Notifications
+                  </button>
 
+                  <button
+                    className="side-panel-link"
+                    onClick={() => {
+                      navigate("/buyer/profile-settings", {
+                        state: { fromSeller: false },
+                      });
+                      onClose();
+                    }}
+                  >
+                    Edit Profile
+                  </button>
+                </>
+              )}
 
-              <button
-                className="side-panel-link"
-                onClick={() => {
-                  navigate("/buyer/profile-settings", {
-                    state: { fromSeller: false },
-                  });
-                  onClose();
-                }}
-              >
-                Edit Profile
-              </button>
-
+              {/* Guest + Logged-in can see */}
               <button
                 className="side-panel-link"
                 onClick={() => {
@@ -243,10 +249,8 @@ export default function SidePanel({
                 return (
                   <div
                     key={cat.name}
-                    className={`category-wrapper ${isOpenCategory ? "open" : ""
-                      }`}
+                    className={`category-wrapper ${isOpenCategory ? "open" : ""}`}
                   >
-                    {/* Header WITH arrow icon */}
                     <button
                       className="side-panel-link category-header-btn"
                       onClick={() => toggleCategory(cat.name)}
@@ -262,7 +266,6 @@ export default function SidePanel({
                       </span>
                     </button>
 
-                    {/* Subcategories (visible only if open) */}
                     {isOpenCategory && (
                       <div className="subcategory-wrapper">
                         {cat.sub.map((sub) => (
@@ -274,8 +277,8 @@ export default function SidePanel({
                                 `/category/${cat.name
                                   .toLowerCase()
                                   .replace(/ /g, "-")}?subcategory=${sub
-                                    .toLowerCase()
-                                    .replace(/ /g, "-")}`
+                                  .toLowerCase()
+                                  .replace(/ /g, "-")}`
                               );
                               onClose();
                             }}
@@ -285,24 +288,15 @@ export default function SidePanel({
                         ))}
                       </div>
                     )}
-                    
                   </div>
                 );
               })}
-              <hr/>
+
+              <hr />
+
               {isLoggedIn && (
                 <div className="bps-logout-wrapper">
-                  <button
-                    className="bps-btn logout-btn"
-                    onClick={() => {
-                      localStorage.removeItem('authToken');
-                      localStorage.removeItem('user');
-                      localStorage.removeItem('rememberMe');
-                      localStorage.removeItem('rememberedEmail');
-                      window.dispatchEvent(new Event('auth-changed'));
-                      window.location.href = "/"; // redirect to homepage
-                    }}
-                  >
+                  <button className="bps-btn logout-btn" onClick={handleLogout}>
                     Logout
                   </button>
                 </div>
