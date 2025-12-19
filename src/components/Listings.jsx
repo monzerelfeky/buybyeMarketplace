@@ -1,176 +1,128 @@
-// pages/Buyer/WishlistPage.jsx
+// components/Listings.jsx
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import Footer from "./Footer";
-import Header from "./Header";
-import "../styles/HomePage.css";
+import { useNavigate } from "react-router-dom";
+import { 
+  getWishlist, 
+  addToWishlist, 
+  removeFromWishlist,
+  getLocalWishlist,
+  addToLocalWishlist,
+  removeFromLocalWishlist
+} from "../utils/wishlist";
 import "../styles/Listings.css";
-import "../styles/Wishlist.css";
-import { getWishlist, addToWishlist, removeFromWishlist } from "../utils/wishlist";
 
-export default function WishlistPage() {
-  const [favorites, setFavorites] = useState({}); // Tracks wishlist items (_id => true)
+export default function Listings({ items = [], title, variant = "" }) {
+  const [wishlistIds, setWishlistIds] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState({});
   const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
   const navigate = useNavigate();
 
-  // Helper: Load guest wishlist from localStorage
-  const getLocalWishlist = () => {
-    try {
-      const localData = localStorage.getItem("guestWishlist");
-      return localData ? JSON.parse(localData) : [];
-    } catch {
-      return [];
-    }
-  };
-
-  // Helper: Save guest wishlist to localStorage
-  const setLocalWishlist = (wishlistIds) => {
-    localStorage.setItem("guestWishlist", JSON.stringify(wishlistIds));
-  };
+  // Use real items if provided
+  const displayItems = items.length > 0 ? items : [];
 
   // Fetch wishlist on mount
   useEffect(() => {
     async function fetchWishlist() {
-      const token = localStorage.getItem("authToken");
-      let wishlistFromDb = [];
-
-      if (token) {
-        // Logged-in: fetch from backend
-        try {
-          wishlistFromDb = await getWishlist(); // [{ _id: "1", ...}, ...]
-        } catch (err) {
-          console.error("Failed to fetch wishlist from DB:", err);
+      try {
+        const token = localStorage.getItem("authToken");
+        
+        if (token) {
+          // User is logged in - fetch from database
+          setIsLoggedIn(true);
+          const data = await getWishlist();
+          setWishlistIds(data.map(item => item._id));
+        } else {
+          // User is guest - load from localStorage
+          setIsLoggedIn(false);
+          const localWishlist = getLocalWishlist();
+          setWishlistIds(localWishlist);
         }
+      } catch (err) {
+        console.error("Failed to fetch wishlist:", err);
+        // Fallback to local storage if API fails
+        const localWishlist = getLocalWishlist();
+        setWishlistIds(localWishlist);
+      } finally {
+        setLoading(false);
       }
-
-      // Always get guest wishlist from localStorage
-      const guestWishlist = getLocalWishlist();
-
-      // Merge backend and guest wishlist (avoid duplicates)
-      const mergedIds = Array.from(
-        new Set([...wishlistFromDb.map((i) => i._id), ...guestWishlist])
-      );
-
-      // Sync guest wishlist to backend if logged-in
-      if (token) {
-        for (let id of mergedIds) {
-          if (!wishlistFromDb.find((item) => item._id === id)) {
-            try {
-              await addToWishlist(id);
-            } catch (err) {
-              console.error("Failed to sync local wishlist to DB:", err);
-            }
-          }
-        }
-        localStorage.removeItem("guestWishlist"); // clear after merge
-      } else {
-        // Save merged guest wishlist
-        setLocalWishlist(mergedIds);
-      }
-
-      // Update state for rendering
-      const favoritesMap = {};
-      mergedIds.forEach((id) => (favoritesMap[id] = true));
-      setFavorites(favoritesMap);
-      setLoading(false);
     }
-
     fetchWishlist();
   }, []);
 
-  // Toggle wishlist item (same logic as Listings.jsx)
-  const toggleFavorite = async (_id) => {
+  const handleToggleWishlist = async (itemId, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
     const token = localStorage.getItem("authToken");
 
-    if (favorites[_id]) {
-      // Remove
-      setFavorites((prev) => {
-        const copy = { ...prev };
-        delete copy[_id];
-        return copy;
-      });
-
-      if (token) {
-        await removeFromWishlist(_id);
-      } else {
-        const guestWishlist = getLocalWishlist().filter((id) => id !== _id);
-        setLocalWishlist(guestWishlist);
+    if (!token) {
+      // Guest user - use localStorage
+      try {
+        if (wishlistIds.includes(itemId)) {
+          const updated = removeFromLocalWishlist(itemId);
+          setWishlistIds(updated);
+          console.log("🤍 Removed from local wishlist");
+        } else {
+          const updated = addToLocalWishlist(itemId);
+          setWishlistIds(updated);
+          console.log("💚 Added to local wishlist");
+        }
+      } catch (err) {
+        console.error("Local wishlist error:", err);
       }
     } else {
-      // Add
-      setFavorites((prev) => ({ ...prev, [_id]: true }));
-
-      if (token) {
-        await addToWishlist(_id);
-      } else {
-        const guestWishlist = getLocalWishlist();
-        guestWishlist.push(_id);
-        setLocalWishlist(guestWishlist);
+      // Logged in user - use database
+      try {
+        if (wishlistIds.includes(itemId)) {
+          await removeFromWishlist(itemId);
+          setWishlistIds(wishlistIds.filter(id => id !== itemId));
+          console.log("🤍 Removed from database wishlist");
+        } else {
+          await addToWishlist(itemId);
+          setWishlistIds([...wishlistIds, itemId]);
+          console.log("💚 Added to database wishlist");
+        }
+      } catch (err) {
+        console.error("Wishlist error:", err);
+        alert("Failed to update wishlist. Please try again.");
       }
     }
   };
 
-  // Mock listings using `_id` to match backend
-  const listings = [
-    {
-      _id: "1",
-      title: "iPhone 15 Pro Max 256GB",
-      price: 48500,
-      category: "Mobiles",
-      location: "Nasr City",
-      deliveryEstimate: "2 hours ago",
-    },
-    {
-      _id: "2",
-      title: "Toyota Corolla 2023",
-      price: 985000,
-      category: "Cars",
-      location: "Maadi",
-      deliveryEstimate: "5 hours ago",
-    },
-    {
-      _id: "3",
-      title: "Studio Apartment – New Cairo",
-      price: 12000,
-      category: "Real Estate",
-      location: "5th Settlement",
-      deliveryEstimate: "1 day ago",
-    },
-    {
-      _id: "4",
-      title: "MacBook Air M2 2023",
-      price: 62900,
-      category: "Electronics",
-      location: "Heliopolis",
-      deliveryEstimate: "3 hours ago",
-    },
-  ];
+  const handlePrevImage = (itemId, imageCount, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex(prev => ({
+      ...prev,
+      [itemId]: prev[itemId] > 0 ? prev[itemId] - 1 : imageCount - 1
+    }));
+  };
 
-  const favoriteListings = listings.filter((item) => favorites[item._id]);
+  const handleNextImage = (itemId, imageCount, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex(prev => ({
+      ...prev,
+      [itemId]: prev[itemId] < imageCount - 1 ? prev[itemId] + 1 : 0
+    }));
+  };
+
+  const isInWishlist = (itemId) => wishlistIds.includes(itemId);
+
+  const sectionClassName = `listings-section${variant ? ` listings-${variant}` : ""}`;
 
   return (
-    <div className="homepage-container">
-      <Header />
-      <div className="header-spacer" />
-
-      <section className="wishlist-section">
-        <div className="wishlist-header-wrapper">
-          <div className="wishlist-header">
-            <div>
-              <h1 className="wishlist-main-title">Your Wishlist</h1>
-              {favoriteListings.length > 0 && (
-                <p className="wishlist-count">
-                  {favoriteListings.length}{" "}
-                  {favoriteListings.length === 1 ? "item" : "items"} saved
-                </p>
-              )}
-            </div>
-            <Link to="/" className="wishlist-back-link">
-              Back to Home
-            </Link>
-          </div>
+    <section className={sectionClassName}>
+      {title ? (
+        <div className="listings-header">
+          <h2 className="listings-title">{title}</h2>
+          {!isLoggedIn && wishlistIds.length > 0 && (
+  <p className="listings-header-guest-notice">
+    Login to save your wishlist permanently
+  </p>
+)}
         </div>
       ) : null}
 
@@ -190,60 +142,142 @@ export default function WishlistPage() {
               return img;
             }
 
-            if (img.includes('uploads/images/')) {
-              const filename = img.split('uploads/images/').pop();
-              return `${API_BASE}/uploads/images/${filename}`;
-            }
-
             // Handle file paths and filenames
             if (img.startsWith('/uploads/')) {
               return `${API_BASE}${img}`;
             }
 
-        {favoriteListings.length === 0 ? (
-          <div className="wishlist-empty">
-            <h2>Your wishlist is empty</h2>
-          </div>
-        ) : (
-          <div className="wishlist-grid">
-            {favoriteListings.map((item) => (
-              <article key={item._id} className="listing-card">
-                <div className="listing-image">
-                  <div className="image-placeholder" />
-                  <button
-                    className={`favorite-heart-btn ${
-                      favorites[item._id] ? "favorited" : ""
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFavorite(item._id);
+            // If it's a filename with extension
+            const hasImageExtension = /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(img);
+            if (hasImageExtension || !img.includes('/')) {
+              return `${API_BASE}/uploads/images/${img}`;
+            }
+
+            // If it starts with /
+            if (img.startsWith('/')) {
+              return `${API_BASE}${img}`;
+            }
+
+            // Default: treat as filename
+            return `${API_BASE}/uploads/images/${img}`;
+          };
+
+          const itemImages = item.images && Array.isArray(item.images) ? item.images : [];
+          const currentIndex = currentImageIndex[item._id] || 0;
+          const currentImage = itemImages.length > 0 ? getImageSrc(itemImages[currentIndex]) : null;
+          const hasMultipleImages = itemImages.length > 1;
+
+          return (
+            <article
+              key={item._id}
+              className="listing-card"
+              onClick={() => navigate(`/product/${item._id}`)}
+            >
+              <div className="listing-image">
+                {currentImage ? (
+                  <img
+                    src={currentImage}
+                    alt={`${item.title} - Image ${currentIndex + 1}`}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain',
+                      display: 'block',
+                      backgroundColor: '#f5f5f5'
                     }}
-                    disabled={loading}
-                    aria-label={
-                      favorites[item._id]
-                        ? "Remove from favorites"
-                        : "Add to favorites"
-                    }
-                  >
-                    💚
-                  </button>
-                </div>
-
-                <div className="listing-body">
-                  <h3 className="listing-title">{item.title}</h3>
-                  <p className="listing-price">EGP {item.price.toLocaleString()}</p>
-                  <div className="listing-meta">
-                    <span className="listing-location">{item.location}</span>
-                    <span className="listing-time">{item.deliveryEstimate}</span>
+                    onError={(e) => {
+                      console.error('Image failed to load:', currentImage, 'for item:', item.title);
+                      e.target.style.display = 'none';
+                      const placeholder = e.target.parentElement.querySelector('.image-placeholder');
+                      if (placeholder) placeholder.style.display = 'flex';
+                    }}
+                  />
+                ) : (
+                  <div className="image-placeholder" style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#e5e7eb',
+                    color: '#9ca3af',
+                    fontSize: '14px'
+                  }}>
+                    No Image
                   </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
+                )}
 
-      <Footer />
-    </div>
+                {/* Image Navigation Arrows */}
+                {hasMultipleImages && (
+                  <>
+                    <button
+                      className="image-nav-btn prev-btn"
+                      onClick={(e) => handlePrevImage(item._id, itemImages.length, e)}
+                      aria-label="Previous image"
+                    >
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                      </svg>
+                    </button>
+                    <button
+                      className="image-nav-btn next-btn"
+                      onClick={(e) => handleNextImage(item._id, itemImages.length, e)}
+                      aria-label="Next image"
+                    >
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
+                    </button>
+                  </>
+                )}
+
+                {/* Image Counter */}
+                {hasMultipleImages && (
+                  <div className="image-counter">
+                    {currentIndex + 1} / {itemImages.length}
+                  </div>
+                )}
+
+                {/* Favorite Button */}
+                <button
+                  className={`favorite-heart-btn ${isInWishlist(item._id) ? "favorited" : ""}`}
+                  onClick={(e) => handleToggleWishlist(item._id, e)}
+                  disabled={loading}
+                  aria-label={isInWishlist(item._id) ? "Remove from favorites" : "Add to favorites"}
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="heart-outline"
+                  >
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                  </svg>
+                  <span className="heart-filled">💚</span>
+                </button>
+              </div>
+
+              <div className="listing-body">
+                <h3 className="listing-title">{item.title}</h3>
+                <p className="listing-price">EGP {item.price.toLocaleString()}</p>
+                <div className="listing-meta">
+                  <span className="listing-location">
+                    {item.category || "Category"}
+                  </span>
+                  <span className="listing-time">
+                    {item.deliveryEstimate || "Available"}
+                  </span>
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
   );
 }

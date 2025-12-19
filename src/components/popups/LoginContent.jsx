@@ -1,6 +1,7 @@
 // src/components/popups/LoginContent.jsx
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { mergeLocalWishlistToDatabase } from "../../utils/wishlist";
 import "../../styles/Login.css";
 
 
@@ -88,7 +89,9 @@ export default function LoginContent({ onClose, onLoginSuccess }) {
       localStorage.setItem("authToken", googleData.token);
       localStorage.setItem("user", JSON.stringify(googleData.user));
       localStorage.setItem("userId", googleData.user?._id || googleData.user?.id || "");
-
+      
+      await mergeLocalWishlistToDatabase();
+      
       window.dispatchEvent(new Event("auth-changed"));
       onLoginSuccess?.();
       onClose?.();
@@ -213,6 +216,8 @@ export default function LoginContent({ onClose, onLoginSuccess }) {
       localStorage.setItem("authToken", loginData.token);
       localStorage.setItem("user", JSON.stringify(loginData.user));
       localStorage.setItem("userId", loginData.user._id);
+
+      await mergeLocalWishlistToDatabase();
 
       window.dispatchEvent(new Event("auth-changed"));
       onLoginSuccess?.();
