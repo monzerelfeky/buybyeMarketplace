@@ -51,6 +51,13 @@
   box-shadow: 0 8px 22px rgba(0, 123, 255, 0.3);
 }
 
+.product-card.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: none;
+}
+
 /* PRODUCT IMAGE */
 .product-card img {
   width: 90px;

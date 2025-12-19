@@ -8,10 +8,13 @@ const {
 // GET /api/orders
 exports.getOrders = async (req, res) => {
   try {
-    const { sellerId, seller } = req.query;
+    const { sellerId, seller, buyerId } = req.query;
     const filter = {};
     if (sellerId || seller) {
       filter.sellerId = sellerId || seller;
+    }
+    if (buyerId) {
+      filter.buyerId = buyerId;
     }
 
     const orders = await Order.find(filter).sort({ createdAt: -1 }).limit(200);
