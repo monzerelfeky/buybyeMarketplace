@@ -66,21 +66,16 @@ export default function OrderTrackingPage() {
     );
   }
 
-  // Status colors
   const statusColors = {
-    New: "#FFA500",
-    Accepted: "#1E90FF",
-    Packed: "#6f42c1",
-    Shipped: "#1E90FF",
-    Delivered: "#28A745",
-    Cancelled: "#DC3545",
+    New: "#f59e0b",
+    Accepted: "#10b981",
+    Packed: "#3b82f6",
+    Shipped: "#8b5cf6",
+    Delivered: "#059669",
+    Cancelled: "#ef4444",
   };
 
-  // Determine current status index from status history
-  const statusHistory = order.statusHistory || [];
-  const currentStatusIndex = statusHistory.length
-    ? Math.max(...statusHistory.map((s) => STATUS_STEPS.indexOf(s.status)))
-    : 0;
+  const currentIndex = STATUS_STEPS.indexOf(order.status || "New");
 
   return (
     <>
@@ -99,24 +94,33 @@ export default function OrderTrackingPage() {
           <div className="order-left">
             <section className="timeline-card">
               <h2>Order Status</h2>
-              <ol className="timeline">
-                {STATUS_STEPS.map((step, idx) => (
-                  <li key={step} className={`timeline-step ${idx <= currentStatusIndex ? "active" : ""}`}>
-                    <div className="step-marker" style={{ backgroundColor: idx <= currentStatusIndex ? statusColors[step] : "#ccc" }}>
-                      {idx + 1}
+
+              <div className="od-timeline">
+                {STATUS_STEPS.map((step, index) => {
+                  const isCompleted = index <= currentIndex && order.status !== "Cancelled";
+                  const isActive = index === currentIndex;
+
+                  return (
+                    <div key={step} className="od-timeline-step">
+                      <div
+                        className={`od-timeline-dot ${isCompleted ? "completed" : ""} ${isActive ? "active" : ""}`}
+                        style={{ backgroundColor: isCompleted ? statusColors[step] : "#ccc" }}
+                      />
+                      <span className="od-timeline-label">{step}</span>
+                      {index < STATUS_STEPS.length - 1 && (
+                        <div
+                          className={`od-timeline-line ${index < currentIndex && order.status !== "Cancelled" ? "completed" : ""}`}
+                          style={{ backgroundColor: index < currentIndex && order.status !== "Cancelled" ? statusColors[step] : "#ccc" }}
+                        />
+                      )}
                     </div>
-                    <div className="step-content">
-                      <div className="step-title">{step}</div>
-                      {statusHistory.filter((u) => u.status === step).map((u) => (
-                        <div key={u.changedAt} className="update-item">
-                          <div className="update-ts">{u.changedAt ? new Date(u.changedAt).toLocaleString() : ""}</div>
-                          {u.note && <div className="update-msg">{u.note}</div>}
-                        </div>
-                      ))}
-                    </div>
-                  </li>
-                ))}
-              </ol>
+                  );
+                })}
+
+                {order.status === "Cancelled" && (
+                  <div className="od-timeline-cancelled">Cancelled</div>
+                )}
+              </div>
             </section>
           </div>
 
@@ -138,7 +142,7 @@ export default function OrderTrackingPage() {
                   className="secondary"
                   onClick={() => navigate(`/report-seller`)}
                 >
-                  flag seller
+                  Flag seller
                 </button>
               </div>
             </section>
