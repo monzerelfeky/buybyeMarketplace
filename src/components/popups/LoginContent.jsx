@@ -2,12 +2,11 @@
 import React, { useState } from "react";
 import "../../styles/Login.css";
 
-export default function LoginContent({ onClose, onLoginSuccess }) {
+export default function LoginContent({ onClose }) {
   const [showPassword, setShowPassword] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -73,7 +72,7 @@ export default function LoginContent({ onClose, onLoginSuccess }) {
     try {
       const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
       const endpoint = isSignUp ? '/api/auth/register' : '/api/auth/login';
-      const payload = isSignUp 
+      const payload = isSignUp
         ? { name: formData.name, email: formData.email, password: formData.password, isSeller: false }
         : { email: formData.email, password: formData.password };
 
@@ -95,17 +94,34 @@ export default function LoginContent({ onClose, onLoginSuccess }) {
       if (data.token) {
         localStorage.setItem('authToken', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        window.dispatchEvent(new Event('auth-changed'));
-        
-        // Store remember me preference
-        if (rememberMe) {
-          localStorage.setItem('rememberMe', 'true');
-          localStorage.setItem('rememberedEmail', formData.email);
+      }
+      // If user just signed up, immediately log them in to get token
+      if (isSignUp) {
+        const loginRes = await fetch(`${API_BASE}/api/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: formData.email, password: formData.password }),
+        });
+
+        const loginData = await loginRes.json();
+
+        if (!loginRes.ok) {
+          setServerError(loginData.message || "Signed up, but login failed");
+          setIsLoading(false);
+          return;
         }
+
+        localStorage.setItem("authToken", loginData.token);
+        localStorage.setItem("user", JSON.stringify(loginData.user));
+      } else {
+        // login flow (your existing code)
+        localStorage.setItem("authToken", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("userId", data.user._id);
+
       }
 
-      // Notify host about successful auth (refresh data, rerender)
-      onLoginSuccess?.();
+
       // Close modal
       onClose?.();
     } catch (err) {
@@ -272,19 +288,11 @@ export default function LoginContent({ onClose, onLoginSuccess }) {
         {serverError && <p className="form-error" style={{ marginBottom: '16px', color: '#d32f2f', fontSize: '14px' }}>{serverError}</p>}
 
         {!isSignUp && (
-          <div className="remember-forgot-row">
-            <label className="checkbox-label">
-              <input 
-                type="checkbox" 
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-              />
-              Remember me
-            </label>
+        
+            
             <a href="#" className="forgot-link">
               Forgot password?
             </a>
-          </div>
         )}
 
         <button className="submit-btn" type="submit" disabled={isLoading}>
@@ -317,6 +325,7 @@ export default function LoginContent({ onClose, onLoginSuccess }) {
           type="button"
           className="social-btn"
           onClick={() => handleSocialLogin("Google")}
+          style={{ width: '100%' }}
         >
           <svg className="social-icon" viewBox="0 0 24 24">
             <path
@@ -337,17 +346,6 @@ export default function LoginContent({ onClose, onLoginSuccess }) {
             />
           </svg>
           Google
-        </button>
-
-        <button
-          type="button"
-          className="social-btn"
-          onClick={() => handleSocialLogin("Facebook")}
-        >
-          <svg className="social-icon" fill="#1877F2" viewBox="0 0 24 24">
-            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-          </svg>
-          Facebook
         </button>
       </div>
     </div>
