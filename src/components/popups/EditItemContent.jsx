@@ -42,7 +42,9 @@ export default function EditItemContent({ item, onClose, onSave }) {
   };
 
   const handleRemoveImage = (id) => {
-    setImages((prev) => prev.filter((img) => img.id !== id));
+    setImages((prev) =>
+      prev.filter((img) => (typeof img === "string" ? img !== id : img.id !== id))
+    );
   };
 
   const handleSave = () => {
@@ -186,18 +188,23 @@ export default function EditItemContent({ item, onClose, onSave }) {
 
           {images.length > 0 && (
             <div className="ei-preview-grid">
-              {images.map((img) => (
-                <div key={img.id} className="ei-preview-img">
-                  <img src={img.base64} alt="preview" />
-                  <button
-                    type="button"
-                    className="ei-remove-img"
-                    onClick={() => handleRemoveImage(img.id)}
-                  >
-                    ✖
-                  </button>
-                </div>
-              ))}
+              {images.map((img) => {
+                const src = typeof img === "string" ? img : img.base64;
+                const key = typeof img === "string" ? img : img.id;
+                const removeId = typeof img === "string" ? img : img.id;
+                return (
+                  <div key={key} className="ei-preview-img">
+                    <img src={src} alt="preview" />
+                    <button
+                      type="button"
+                      className="ei-remove-img"
+                      onClick={() => handleRemoveImage(removeId)}
+                    >
+                      X
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

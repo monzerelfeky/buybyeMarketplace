@@ -1,6 +1,6 @@
 // pages/Buyer/WishlistPage.jsx
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
 import { getWishlist, removeFromWishlist } from "../../utils/wishlist";
@@ -11,6 +11,7 @@ import "../../styles/Wishlist.css";
 export default function WishlistPage() {
   const [wishlistItems, setWishlistItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
@@ -48,6 +49,17 @@ export default function WishlistPage() {
     } catch (err) {
       console.error("Failed to remove from wishlist:", err);
     }
+  };
+
+  const getImageSrc = (images) => {
+    if (!images || images.length === 0) return null;
+    const img = images[0];
+    if (!img || typeof img !== "string") return null;
+    if (img.startsWith("http://") || img.startsWith("https://")) return img;
+    if (img.startsWith("data:")) return img;
+    if (img.startsWith("/uploads/")) return `${API_BASE}${img}`;
+    if (img.startsWith("/")) return `${API_BASE}${img}`;
+    return `${API_BASE}/uploads/images/${img}`;
   };
 
 
@@ -107,23 +119,33 @@ export default function WishlistPage() {
           </div>
         ) : (
           <div className="wishlist-grid">
-            {wishlistItems.map((item) => (
-
-              <article key={item._id} className="listing-card">
+            {wishlistItems.map((item) => {
+              const imageSrc = getImageSrc(item.images);
+              return (
+              <article
+                key={item._id}
+                className="listing-card"
+                onClick={() => navigate(`/product/${item._id}`)}
+              >
                 <div className="listing-image">
-                  <div className="image-placeholder">
-                    {item.images?.[0] ? (
-                      <img
-                        src={`${API_BASE}${item.images[0]}`}
-                        alt={item.title}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                        }}
-                      />
-                    ) : null}
-                  </div>
+                  {imageSrc ? (
+                    <img
+                      src={imageSrc}
+                      alt={item.title}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        display: "block",
+                      }}
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                        const placeholder = e.target.parentElement.querySelector(".image-placeholder");
+                        if (placeholder) placeholder.style.display = "flex";
+                      }}
+                    />
+                  ) : null}
+                  <div className="image-placeholder" style={{ display: imageSrc ? "none" : "flex" }} />
 
                   <button
                     className="favorite-heart-btn favorited"
@@ -160,8 +182,8 @@ export default function WishlistPage() {
                   </div>
                 </div>
               </article>
-
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

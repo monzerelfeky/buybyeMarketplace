@@ -119,7 +119,11 @@ export default function Listings({ items = [], title, variant = "" }) {
           const imageSrc = getImageSrc();
 
           return (
-            <article key={item._id} className="listing-card">
+            <article
+              key={item._id}
+              className="listing-card"
+              onClick={() => navigate(`/product/${item._id}`)}
+            >
               <div className="listing-image">
                 {imageSrc ? (
                   <img
