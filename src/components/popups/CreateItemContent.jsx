@@ -53,7 +53,7 @@ export default function CreateItemContent({ onSave, onClose }) {
     // Normalize and round price to two decimals to avoid floating-point drift
     const normalizedPrice = Number.isFinite(Number(price)) ? Math.round(Number(price) * 100) / 100 : 0;
 
-      const newItem = {
+    const newItem = {
       seller: localStorage.getItem("userId"), // or parsed user._id
       title,
       description,
@@ -63,11 +63,6 @@ export default function CreateItemContent({ onSave, onClose }) {
       isActive: true,
       images: imageStrings
     };
-
-
-onSave?.(newItem);
-onClose?.();
-
 
     // Pass item with images to context
     onSave?.(newItem, images);

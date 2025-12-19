@@ -1,5 +1,6 @@
 // components/Listings.jsx
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { getWishlist, addToWishlist, removeFromWishlist } from "../utils/wishlist";
 import "../styles/Listings.css";
 
@@ -7,6 +8,7 @@ export default function Listings({ items = [], title, variant = "" }) {
   const [wishlistIds, setWishlistIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+  const navigate = useNavigate();
 
   
 
@@ -72,7 +74,11 @@ export default function Listings({ items = [], title, variant = "" }) {
 
       <div className="listings-grid">
         {displayItems.map((item) => (
-          <article key={item._id} className="listing-card">
+          <article
+            key={item._id}
+            className="listing-card"
+            onClick={() => navigate(`/product/${item._id}`)}
+          >
             <div className="listing-image">
               <div className="image-placeholder">
                 {item.images?.[0] ? (

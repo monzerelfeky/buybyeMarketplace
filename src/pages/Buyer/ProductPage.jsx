@@ -17,26 +17,32 @@ export default function ProductPage() {
     setLoading(true);
 
     const fetchProduct = async () => {
-      const simulatedProduct = {
-        id: productId,
-        name: `Product ${productId}`,
-        price: 199,
-        description:
-          "This is a placeholder description for the product. Details will come from the database later.",
-        image: "https://via.placeholder.com/300",
-        inStock: true,
-      };
-      setTimeout(() => {
-        setProduct(simulatedProduct);
+      try {
+        const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+        const res = await fetch(`${API_BASE}/api/items/${productId}`);
+        if (!res.ok) throw new Error("Product fetch failed");
+        const data = await res.json();
+        setProduct(data);
+      } catch (err) {
+        console.error("Failed to fetch product:", err);
+        setProduct(null);
+      } finally {
         setLoading(false);
-      }, 300);
+      }
     };
 
     fetchProduct();
   }, [productId]);
 
-  const increaseQty = () => setQuantity((q) => q + 1);
+  const maxQty = product?.quantity ?? 1;
+  const increaseQty = () => setQuantity((q) => Math.min(q + 1, maxQty));
   const decreaseQty = () => setQuantity((q) => (q > 1 ? q - 1 : 1));
+  const handleQtyChange = (e) => {
+    const next = Number(e.target.value);
+    if (!Number.isFinite(next)) return;
+    const clamped = Math.max(1, Math.min(next, maxQty));
+    setQuantity(clamped);
+  };
 
   const handleAddToCart = () => {
     console.log("Added to cart:", { product, quantity });
@@ -63,13 +69,20 @@ export default function ProductPage() {
           <div className="product-container">
             {/* Image Gallery */}
             <div className="img-gallery">
-              <img src={product.image} alt={product.name} />
+              <img
+                src={
+                  product.images?.[0]
+                    ? `${process.env.REACT_APP_API_BASE || "http://localhost:5000"}${product.images[0]}`
+                    : "https://via.placeholder.com/300"
+                }
+                alt={product.title}
+              />
             </div>
 
             {/* Product Information */}
             <div className="product-content">
               <div className="product-header">
-                <h1 className="product-title">{product.name}</h1>
+                <h1 className="product-title">{product.title}</h1>
                 <button
                   className="wishlist-btn"
                   onClick={toggleWishlist}
@@ -83,9 +96,9 @@ export default function ProductPage() {
                 </button>
               </div>
 
-              <p className="product-price">${product.price.toFixed(2)}</p>
+              <p className="product-price">EGP {Number(product.price || 0).toFixed(2)}</p>
               
-              {product.inStock ? (
+              {product.quantity > 0 ? (
                 <span className="stock-badge in-stock">In Stock</span>
               ) : (
                 <span className="stock-badge out-of-stock">Out of Stock</span>
@@ -105,8 +118,20 @@ export default function ProductPage() {
                     >
                       −
                     </button>
-                    <span className="quantity-display">{quantity}</span>
-                    <button onClick={increaseQty} aria-label="Increase quantity">
+                    <input
+                      id="quantity"
+                      type="number"
+                      min="1"
+                      max={maxQty}
+                      className="quantity-display"
+                      value={quantity}
+                      onChange={handleQtyChange}
+                    />
+                    <button
+                      onClick={increaseQty}
+                      aria-label="Increase quantity"
+                      disabled={quantity >= maxQty}
+                    >
                       +
                     </button>
                   </div>
@@ -116,7 +141,7 @@ export default function ProductPage() {
                   <button
                     className="btn btn-primary"
                     onClick={handleAddToCart}
-                    disabled={!product.inStock}
+                    disabled={product.quantity <= 0}
                   >
                     <FaShoppingCart />
                     Add to Cart

@@ -33,6 +33,18 @@ exports.listItems = async (req, res) => {
   }
 };
 
+// GET /api/items/:id
+exports.getItem = async (req, res) => {
+  try {
+    const item = await Item.findById(req.params.id);
+    if (!item) return res.status(404).json({ message: 'Not found' });
+    res.json(item);
+  } catch (err) {
+    console.error('Failed to fetch item', err.message);
+    res.status(400).json({ message: 'Bad request' });
+  }
+};
+
 // GET /api/items/suggestions?query=...
 exports.getSuggestions = async (req, res) => {
   try {
