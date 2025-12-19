@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 import "../styles/SidePanel.css";
 
 export default function SidePanel({
@@ -12,21 +11,12 @@ export default function SidePanel({
   isLoggedIn = false,
   isSeller = false,
 }) {
-  // Hooks MUST always be at the top
-  const [openCategory, setOpenCategory] = useState(null);
-
   const categoryList = [
-    { name: "Cars", sub: ["Sedan", "SUV", "Truck"] },
-    { name: "Real Estate", sub: ["Apartments", "Houses", "Land"] },
-    { name: "Mobiles", sub: ["iPhone", "Samsung", "Others"] },
-    { name: "Jobs", sub: ["Full-Time", "Part-Time", "Freelance"] },
-    { name: "Electronics", sub: ["TVs", "Laptops", "Audio"] },
-    { name: "Home & Garden", sub: ["Furniture", "Decor", "Garden"] },
+    "Electronics",
+    "Home & Garden",
+    "Sports & Fitness",
+    "Cars",
   ];
-
-  const toggleCategory = (cat) => {
-    setOpenCategory(openCategory === cat ? null : cat);
-  };
 
   // Return backdrop only when closed but still visible for fade animation
   if (!isOpen) {
@@ -36,8 +26,6 @@ export default function SidePanel({
   const handleLogout = () => {
     localStorage.removeItem("authToken");
     localStorage.removeItem("user");
-    localStorage.removeItem("rememberMe");
-    localStorage.removeItem("rememberedEmail");
     window.dispatchEvent(new Event("auth-changed"));
     window.location.href = "/"; // redirect to homepage
   };
@@ -104,7 +92,6 @@ export default function SidePanel({
                 Orders
               </button>
 
-              {/* keep only ONE notifications entry */}
               <button
                 className="side-panel-link"
                 onClick={() => {
@@ -257,55 +244,21 @@ export default function SidePanel({
 
               <p className="side-panel-section-title">Categories</p>
 
-              {/* CATEGORY DROPDOWN UI */}
-              {categoryList.map((cat) => {
-                const isOpenCategory = openCategory === cat.name;
-
-                return (
-                  <div
-                    key={cat.name}
-                    className={`category-wrapper ${isOpenCategory ? "open" : ""}`}
-                  >
-                    <button
-                      className="side-panel-link category-header-btn"
-                      onClick={() => toggleCategory(cat.name)}
-                    >
-                      <span>{cat.name}</span>
-
-                      <span className="arrow-icon">
-                        {isOpenCategory ? (
-                          <FiChevronUp size={18} />
-                        ) : (
-                          <FiChevronDown size={18} />
-                        )}
-                      </span>
-                    </button>
-
-                    {isOpenCategory && (
-                      <div className="subcategory-wrapper">
-                        {cat.sub.map((sub) => (
-                          <button
-                            key={sub}
-                            className="side-panel-link subcategory-btn"
-                            onClick={() => {
-                              navigate(
-                                `/category/${cat.name
-                                  .toLowerCase()
-                                  .replace(/ /g, "-")}?subcategory=${sub
-                                  .toLowerCase()
-                                  .replace(/ /g, "-")}`
-                              );
-                              onClose();
-                            }}
-                          >
-                            {sub}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {/* CATEGORY BUTTONS - No Subcategories */}
+              {categoryList.map((category) => (
+                <button
+                  key={category}
+                  className="side-panel-link"
+                  onClick={() => {
+                    navigate(
+                      `/category/${category.toLowerCase().replace(/ /g, "-")}`
+                    );
+                    onClose();
+                  }}
+                >
+                  {category}
+                </button>
+              ))}
 
               <hr />
 

@@ -48,8 +48,8 @@ export default function CreateItemContent({ onSave, onClose }) {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-  // Convert image objects to base64 strings for backend
-  const imageStrings = images.map(img => img.base64).filter(b64 => b64);
+    // Convert image objects to base64 strings for backend
+    const imageStrings = images.map(img => img.base64).filter(b64 => b64);
 
     // Normalize and round price to two decimals to avoid floating-point drift
     const normalizedPrice = Number.isFinite(Number(price)) ? Math.round(Number(price) * 100) / 100 : 0;
@@ -146,11 +146,9 @@ export default function CreateItemContent({ onSave, onClose }) {
               onChange={(e) => setCategory(e.target.value)}
             >
               <option>Electronics</option>
-              <option>Vehicles</option>
-              <option>Fashion</option>
+              <option>Cars</option>
               <option>Home & Garden</option>
-              <option>Sports</option>
-              <option>Other</option>
+              <option>Sports & fitness</option>
             </select>
           </div>
         </div>
@@ -188,7 +186,7 @@ export default function CreateItemContent({ onSave, onClose }) {
             </label>
           </div>
 
-        
+
           {/* IMAGE PREVIEW GRID */}
           {images.length > 0 && (
             <div className="ci-preview-grid">
