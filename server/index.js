@@ -16,7 +16,8 @@ const notificationsRoutes = require('./routes/notifications');
 const userRoutes = require('./routes/userRoutes');
 const sellersRoutes = require('./routes/sellers');
 const errorHandler = require('./middlewares/errorHandler');
-
+const wishlistRoutes = require("./routes/wishlist");
+const authMiddleware = require("./middlewares/auth");
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use('/api/flags', flagsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/sellers', sellersRoutes);
+pp.use("/api/wishlist", authMiddleware, wishlistRoutes);
 
 app.get('/', (req, res) => res.send('Marketplace API'));
 
