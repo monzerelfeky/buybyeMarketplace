@@ -6,6 +6,7 @@ export default function CreateItemContent({ onSave, onClose }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [quantity, setQuantity] = useState("");
   const [category, setCategory] = useState("Electronics");
   const [deliveryEstimate, setDeliveryEstimate] = useState("5-7 days");
   const [images, setImages] = useState([]);
@@ -58,6 +59,7 @@ export default function CreateItemContent({ onSave, onClose }) {
       title,
       description,
       price: normalizedPrice,
+      quantity: Number.isFinite(Number(quantity)) ? Number(quantity) : 0,
       category,
       deliveryEstimate,
       isActive: true,
@@ -103,7 +105,7 @@ export default function CreateItemContent({ onSave, onClose }) {
           />
         </div>
 
-        {/* Price + Category */}
+        {/* Price + Quantity */}
         <div className="ci-row">
           <div className="ci-field half">
             <label className="ci-label">Price ($)</label>
@@ -119,6 +121,23 @@ export default function CreateItemContent({ onSave, onClose }) {
             />
           </div>
 
+          <div className="ci-field half">
+            <label className="ci-label">Quantity</label>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              className="ci-input"
+              placeholder="0"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              required
+            />
+          </div>
+        </div>
+
+        {/* Category */}
+        <div className="ci-row">
           <div className="ci-field half">
             <label className="ci-label">Category</label>
             <select
