@@ -7,13 +7,12 @@ import "../styles/Listings.css";
 export default function Listings({ items = [], title, variant = "" }) {
   const [wishlistIds, setWishlistIds] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentImageIndex, setCurrentImageIndex] = useState({});
   const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
   const navigate = useNavigate();
 
-
-
-  // Use real items if provided, otherwise use mock data
-  const displayItems = items.length > 0 ? items : mockListings;
+  // Use real items if provided
+  const displayItems = items.length > 0 ? items : [];
 
   // Fetch wishlist on mount
   useEffect(() => {
@@ -60,6 +59,24 @@ export default function Listings({ items = [], title, variant = "" }) {
     }
   };
 
+  const handlePrevImage = (itemId, imageCount, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex(prev => ({
+      ...prev,
+      [itemId]: prev[itemId] > 0 ? prev[itemId] - 1 : imageCount - 1
+    }));
+  };
+
+  const handleNextImage = (itemId, imageCount, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex(prev => ({
+      ...prev,
+      [itemId]: prev[itemId] < imageCount - 1 ? prev[itemId] + 1 : 0
+    }));
+  };
+
   const isInWishlist = (itemId) => wishlistIds.includes(itemId);
 
   const sectionClassName = `listings-section${variant ? ` listings-${variant}` : ""}`;
@@ -73,13 +90,9 @@ export default function Listings({ items = [], title, variant = "" }) {
       ) : null}
 
       <div className="listings-grid">
-
         {displayItems.map((item) => {
-          // Process image source - handle JPEG/PNG filenames, base64, and full URLs
-          const getImageSrc = () => {
-            if (!item.images || item.images.length === 0) return null;
-
-            const img = item.images[0];
+          // Process images array
+          const getImageSrc = (img) => {
             if (!img || typeof img !== 'string') return null;
 
             // If it's already a full URL (http/https), use as-is
@@ -93,21 +106,17 @@ export default function Listings({ items = [], title, variant = "" }) {
             }
 
             // Handle file paths and filenames
-            // If it already starts with /uploads/, use as-is (just prepend API_BASE)
             if (img.startsWith('/uploads/')) {
               return `${API_BASE}${img}`;
             }
 
-            // If it's a filename (ends with .jpg, .jpeg, .png, etc.), add the uploads path
-            // Check if it looks like a filename (has extension or is just a name)
+            // If it's a filename with extension
             const hasImageExtension = /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(img);
-
             if (hasImageExtension || !img.includes('/')) {
-              // It's a filename, prepend the uploads/images path
               return `${API_BASE}/uploads/images/${img}`;
             }
 
-            // If it starts with /, it's a relative path
+            // If it starts with /
             if (img.startsWith('/')) {
               return `${API_BASE}${img}`;
             }
@@ -116,7 +125,10 @@ export default function Listings({ items = [], title, variant = "" }) {
             return `${API_BASE}/uploads/images/${img}`;
           };
 
-          const imageSrc = getImageSrc();
+          const itemImages = item.images && Array.isArray(item.images) ? item.images : [];
+          const currentIndex = currentImageIndex[item._id] || 0;
+          const currentImage = itemImages.length > 0 ? getImageSrc(itemImages[currentIndex]) : null;
+          const hasMultipleImages = itemImages.length > 1;
 
           return (
             <article
@@ -125,40 +137,76 @@ export default function Listings({ items = [], title, variant = "" }) {
               onClick={() => navigate(`/product/${item._id}`)}
             >
               <div className="listing-image">
-                {imageSrc ? (
+                {currentImage ? (
                   <img
-                    src={imageSrc}
-
-                    alt={item.title}
+                    src={currentImage}
+                    alt={`${item.title} - Image ${currentIndex + 1}`}
                     style={{
                       width: '100%',
                       height: '100%',
-                      objectFit: 'cover',
-                      display: 'block'
+                      objectFit: 'contain',
+                      display: 'block',
+                      backgroundColor: '#f5f5f5'
                     }}
                     onError={(e) => {
-                      console.error('Image failed to load:', imageSrc, 'for item:', item.title);
+                      console.error('Image failed to load:', currentImage, 'for item:', item.title);
                       e.target.style.display = 'none';
-                      // Show placeholder on error
                       const placeholder = e.target.parentElement.querySelector('.image-placeholder');
                       if (placeholder) placeholder.style.display = 'flex';
                     }}
                   />
                 ) : (
-                  <div className="image-placeholder" />
+                  <div className="image-placeholder" style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#e5e7eb',
+                    color: '#9ca3af',
+                    fontSize: '14px'
+                  }}>
+                    No Image
+                  </div>
+                )}
+
+                {/* Image Navigation Arrows */}
+                {hasMultipleImages && (
+                  <>
+                    <button
+                      className="image-nav-btn prev-btn"
+                      onClick={(e) => handlePrevImage(item._id, itemImages.length, e)}
+                      aria-label="Previous image"
+                    >
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                      </svg>
+                    </button>
+                    <button
+                      className="image-nav-btn next-btn"
+                      onClick={(e) => handleNextImage(item._id, itemImages.length, e)}
+                      aria-label="Next image"
+                    >
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
+                    </button>
+                  </>
+                )}
+
+                {/* Image Counter */}
+                {hasMultipleImages && (
+                  <div className="image-counter">
+                    {currentIndex + 1} / {itemImages.length}
+                  </div>
                 )}
 
                 {/* Favorite Button */}
                 <button
-                  className={`favorite-heart-btn ${isInWishlist(item._id) ? "favorited" : ""
-                    }`}
+                  className={`favorite-heart-btn ${isInWishlist(item._id) ? "favorited" : ""}`}
                   onClick={(e) => handleToggleWishlist(item._id, e)}
                   disabled={loading}
-                  aria-label={
-                    isInWishlist(item._id)
-                      ? "Remove from favorites"
-                      : "Add to favorites"
-                  }
+                  aria-label={isInWishlist(item._id) ? "Remove from favorites" : "Add to favorites"}
                 >
                   <svg
                     width="24"
@@ -173,7 +221,6 @@ export default function Listings({ items = [], title, variant = "" }) {
                   >
                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                   </svg>
-
                   <span className="heart-filled">💚</span>
                 </button>
               </div>
