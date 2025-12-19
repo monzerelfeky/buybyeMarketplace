@@ -1,7 +1,6 @@
 /* LISTINGS SECTION – Clean, Modern, High-End 2025 */
 .listings-section {
   padding: 80px 20px;
-  background: #fff;
   max-width: 1280px;
   margin: 20px auto;
   border-radius: 10px;
@@ -21,6 +20,32 @@
   font-weight: 700;
   color: #0f172a;
   margin: 0;
+}
+
+/* Category page variant */
+.listings-section.listings-category {
+  padding: 40px 0 10px;
+  margin: 0 auto;
+  border-radius: 0;
+  background: transparent;
+}
+
+.listings-section.listings-category .listings-header {
+  margin-bottom: 20px;
+}
+
+.listings-section.listings-category .listings-title {
+  font-size: 24px;
+  letter-spacing: 0.2px;
+}
+
+.listings-section.listings-category .listings-grid {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.listings-section.listings-category .listing-card:hover {
+  transform: translateY(-6px);
 }
 
 /* Grid */

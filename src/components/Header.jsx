@@ -71,12 +71,29 @@
     // SEARCH HANDLERS
     const handleSearch = () => {
       if (!searchQuery.trim()) return;
-      navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
+    navigate(`/category/all?query=${encodeURIComponent(searchQuery)}`);
     };
 
     const handleSearchKeyDown = (e) => {
       if (e.key === "Enter") handleSearch();
     };
+
+    useEffect(() => {
+      const isCategoryPage = location.pathname.startsWith("/category/");
+      if (!isCategoryPage) return;
+
+      const timeout = setTimeout(() => {
+        const params = new URLSearchParams(location.search);
+        if (searchQuery.trim()) {
+          params.set("query", searchQuery.trim());
+        } else {
+          params.delete("query");
+        }
+        navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+      }, 250);
+
+      return () => clearTimeout(timeout);
+    }, [location.pathname, location.search, navigate, searchQuery]);
 
   // Require login before allowing seller-only actions/navigation
   const ensureLoggedIn = () => {
@@ -170,17 +187,19 @@
           {/* BUYER CATEGORIES */}
           {!isSellerPage && (
             <div className="categories-bar">
-              {categories.map((cat) => (
-                <button 
-                  key={cat} 
-                  className="category-btn"
-                  onClick={() =>
-                    navigate(`/category/${cat.toLowerCase().replace(/ /g, "-")}`)
-                  }
-                >
-                  {cat}
-                </button>
-              ))}
+              {categories.map((cat) => {
+                const slug = cat.toLowerCase().replace(/ /g, "-");
+                const isActiveCategory = location.pathname === `/category/${slug}`;
+                return (
+                  <button 
+                    key={cat} 
+                    className={`category-btn${isActiveCategory ? " active" : ""}`}
+                    onClick={() => navigate(`/category/${slug}`)}
+                  >
+                    {cat}
+                  </button>
+                );
+              })}
             </div>
           )}
 

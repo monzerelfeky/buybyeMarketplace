@@ -42,7 +42,6 @@ import SellerFees from "./pages/sell/SellerFees";
 import CartPage from "./pages/Buyer/CartPage";
 
 //Search Page
-import SearchPage from "./pages/Buyer/SearchPage";
 
 //Category Page
 import CategoryPage from "./pages/Buyer/CategoryPage";
@@ -102,8 +101,6 @@ export default function App() {
         {/* Cart Route */}
         <Route path="/cart" element={<CartPage />} />
 
-        {/* Search Route */}
-        <Route path="/search" element={<SearchPage />} />
 
         {/* Category Route */}
         <Route path="/category/:categoryName" element={<CategoryPage />} />

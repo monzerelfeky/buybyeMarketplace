@@ -9,33 +9,7 @@ export default function Hero() {
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const navigate = useNavigate();
-
-  // Mocked JSON search data
-  const DATA = {
-    categories: [
-      "Cars",
-      "Real Estate",
-      "Mobiles",
-      "Jobs",
-      "Electronics",
-      "Home & Garden",
-      "Sports",
-      "Fashion",
-      "Services",
-    ],
-    popularItems: [
-      "iPhone 15",
-      "Toyota Camry",
-      "MacBook Pro",
-      "Samsung S24",
-      "Gaming Laptop",
-      "Road Bicycle",
-      "Studio Apartment",
-      "AirPods Pro",
-      "Sony WH-1000XM5",
-      "Office Chair",
-    ],
-  };
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
   // Debounced search effect
   useEffect(() => {
@@ -51,32 +25,32 @@ export default function Hero() {
     return () => clearTimeout(timeout);
   }, [query]);
 
-  const runSearch = (text) => {
-    const lower = text.toLowerCase();
-
-    const matchedCategories = DATA.categories.filter((cat) =>
-      cat.toLowerCase().includes(lower)
-    );
-
-    const matchedItems = DATA.popularItems.filter((item) =>
-      item.toLowerCase().includes(lower)
-    );
-
-    setSuggestions([...matchedCategories, ...matchedItems]);
-    setShowSuggestions(true);
+  const runSearch = async (text) => {
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/items/suggestions?query=${encodeURIComponent(text)}`
+      );
+      if (!res.ok) throw new Error("Suggestion request failed");
+      const data = await res.json();
+      setSuggestions(data);
+      setShowSuggestions(true);
+    } catch (err) {
+      console.error("Suggestion fetch failed:", err);
+      setSuggestions([]);
+    }
   };
 
   // Navigate to search page
   const handleSearch = () => {
     if (!query.trim()) return;
-    navigate(`/search?query=${encodeURIComponent(query)}`);
+    navigate(`/category/all?query=${encodeURIComponent(query)}`);
   };
 
   // Select suggestion — navigate + fill input
   const handleSelectSuggestion = (value) => {
     setQuery(value);
     setShowSuggestions(false);
-    navigate(`/search?query=${encodeURIComponent(value)}`);
+    navigate(`/category/all?query=${encodeURIComponent(value)}`);
   };
 
   // Press Enter to search

@@ -2,19 +2,70 @@ const Item = require('../models/Item');
 const { processImages, deleteImages } = require('../utils/imageHandler');
 const { recalcOrdersForItem } = require('../services/itemService');
 
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 // GET /api/items
 exports.listItems = async (req, res) => {
   try {
-    const { sellerId, seller } = req.query;
+    const { sellerId, seller, query, category } = req.query;
     const filter = {};
     if (sellerId || seller) {
       filter.seller = sellerId || seller;
+    }
+    if (category) {
+      filter.category = category;
+    }
+
+    if (query) {
+      const safe = escapeRegex(query.trim());
+      filter.$or = [
+        { title: { $regex: safe, $options: "i" } },
+        { category: { $regex: safe, $options: "i" } },
+        { description: { $regex: safe, $options: "i" } },
+      ];
     }
 
     const items = await Item.find(filter).limit(100);
     res.json(items);
   } catch (err) {
     console.error('Failed to fetch items', err.message);
+    res.status(400).json({ message: 'Bad request' });
+  }
+};
+
+// GET /api/items/suggestions?query=...
+exports.getSuggestions = async (req, res) => {
+  try {
+    const { query } = req.query;
+    if (!query || !query.trim()) return res.json([]);
+
+    const safe = escapeRegex(query.trim());
+    const matches = await Item.find({
+      $or: [
+        { title: { $regex: safe, $options: "i" } },
+        { category: { $regex: safe, $options: "i" } },
+      ],
+    })
+      .select("title category")
+      .limit(20)
+      .lean();
+
+    const suggestions = [];
+    const seen = new Set();
+    for (const item of matches) {
+      if (item.title && !seen.has(item.title)) {
+        seen.add(item.title);
+        suggestions.push(item.title);
+      }
+      if (item.category && !seen.has(item.category)) {
+        seen.add(item.category);
+        suggestions.push(item.category);
+      }
+    }
+
+    res.json(suggestions.slice(0, 10));
+  } catch (err) {
+    console.error('Failed to fetch suggestions', err.message);
     res.status(400).json({ message: 'Bad request' });
   }
 };
