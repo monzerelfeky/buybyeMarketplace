@@ -11,7 +11,6 @@ export default function LoginContent({ onClose, onLoginSuccess }) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState("");
-
   const [showForgotToast, setShowForgotToast] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -77,91 +76,50 @@ export default function LoginContent({ onClose, onLoginSuccess }) {
     setServerError("");
 
     try {
+      const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
-      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
-      const endpoint = isSignUp ? '/api/auth/register' : '/api/auth/login';
-      const payload = isSignUp
-        ? { name: formData.name, email: formData.email, password: formData.password, isSeller: false }
-        : { email: formData.email, password: formData.password };
+      if (isSignUp) {
+        const registerRes = await fetch(`${API_BASE}/api/auth/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            password: formData.password,
+            isSeller: false,
+          }),
+        });
 
-      const res = await fetch(`${API_BASE}${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        const registerData = await registerRes.json();
+        if (!registerRes.ok) {
+          setServerError(registerData.message || "Authentication failed");
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      const loginRes = await fetch(`${API_BASE}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setServerError(data.message || 'Authentication failed');
+      const loginData = await loginRes.json();
+      if (!loginRes.ok) {
+        setServerError(loginData.message || "Authentication failed");
         setIsLoading(false);
         return;
       }
 
-      // Store token and user info in localStorage
-      if (data.token) {
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-      }
-      // If user just signed up, immediately log them in to get token
-      if (isSignUp) {
-        const loginRes = await fetch(`${API_BASE}/api/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: formData.email, password: formData.password }),
-        });
-
-        const loginData = await loginRes.json();
-
-        if (!loginRes.ok) {
-          setServerError(loginData.message || "Signed up, but login failed");
-          setIsLoading(false);
-          return;
-        }
-
-        localStorage.setItem("authToken", loginData.token);
-        localStorage.setItem("user", JSON.stringify(loginData.user));
-      } else {
-
-        // login flow (your existing code)
-        localStorage.setItem("authToken", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.setItem("userId", data.user._id);
-
-      }
-
-
-      // Close modal
-
-        const res = await fetch(`${API_BASE}/api/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: formData.email,
-            password: formData.password,
-          }),
-        });
-
-        const data = await res.json();
-        if (!res.ok) {
-          setServerError(data.message || "Authentication failed");
-          setIsLoading(false);
-          return;
-        }
-
-        localStorage.setItem("authToken", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.setItem("userId", data.user._id);
-      }
-
-      if (rememberMe) {
-        localStorage.setItem("rememberMe", "true");
-        localStorage.setItem("rememberedEmail", formData.email);
-      }
+      localStorage.setItem("authToken", loginData.token);
+      localStorage.setItem("user", JSON.stringify(loginData.user));
+      localStorage.setItem("userId", loginData.user._id);
 
       window.dispatchEvent(new Event("auth-changed"));
       onLoginSuccess?.();
-
       onClose?.();
     } catch (err) {
       console.error("Auth error:", err);
@@ -337,13 +295,11 @@ export default function LoginContent({ onClose, onLoginSuccess }) {
         {serverError && <p className="form-error" style={{ marginBottom: '16px', color: '#d32f2f', fontSize: '14px' }}>{serverError}</p>}
 
         {!isSignUp && (
-
-        
-            
-            <a href="#" className="forgot-link">
+          <div className="remember-forgot-row">
+            <button type="button" className="forgot-link" onClick={handleForgotClick}>
               Forgot password?
-            </a>
-
+            </button>
+          </div>
         )}
         {showForgotToast && (
           <div className="forgot-toast">Opening reset page...</div>
