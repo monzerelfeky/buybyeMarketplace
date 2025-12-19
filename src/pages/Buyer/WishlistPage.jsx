@@ -1,59 +1,53 @@
 // pages/Buyer/WishlistPage.jsx
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import Footer from "../../components/Footer";
+import Header from "../../components/Header";
+import { getWishlist, removeFromWishlist } from "../../utils/wishlist";
 import "../../styles/HomePage.css";
 import "../../styles/Listings.css";
 import "../../styles/Wishlist.css";
-import Header from "../../components/Header";
 
-export default function WishlistPage({
-  favorites = {},
-  toggleFavorite = () => {},
-}) {
+export default function WishlistPage() {
+  const [wishlistItems, setWishlistItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
-  const categories = [
-    "Cars",
-    "Real Estate",
-    "Mobiles",
-    "Jobs",
-    "Electronics",
-    "Home & Garden",
-  ];
+  const fetchWishlist = async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      setWishlistItems([]);
+      setLoading(false);
+      return;
+    }
 
-  // Same mock data as Listings.jsx
-  const listings = [
-    {
-      id: 1,
-      title: "iPhone 15 Pro Max 256GB",
-      price: "48,500",
-      location: "Nasr City",
-      time: "2 hours ago",
-    },
-    {
-      id: 2,
-      title: "Toyota Corolla 2023",
-      price: "985,000",
-      location: "Maadi",
-      time: "5 hours ago",
-    },
-    {
-      id: 3,
-      title: "Studio Apartment – New Cairo",
-      price: "12,000/mo",
-      location: "5th Settlement",
-      time: "1 day ago",
-    },
-    {
-      id: 4,
-      title: "MacBook Air M2 2023",
-      price: "62,900",
-      location: "Heliopolis",
-      time: "3 hours ago",
-    },
-  ];
+    try {
+      const data = await getWishlist();
+      setWishlistItems(data);
+    } catch (err) {
+      console.error("Failed to fetch wishlist:", err);
+      setWishlistItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const favoriteListings = listings.filter((item) => favorites[item.id]);
+  useEffect(() => {
+    fetchWishlist();
+    const handleAuthChanged = () => fetchWishlist();
+    window.addEventListener("auth-changed", handleAuthChanged);
+    return () => window.removeEventListener("auth-changed", handleAuthChanged);
+  }, []);
+
+  const handleRemove = async (itemId, e) => {
+    e.stopPropagation();
+    try {
+      await removeFromWishlist(itemId);
+      setWishlistItems((prev) => prev.filter((item) => item._id !== itemId));
+    } catch (err) {
+      console.error("Failed to remove from wishlist:", err);
+    }
+  };
 
   return (
     <div className="homepage-container">
@@ -67,10 +61,10 @@ export default function WishlistPage({
           <div className="wishlist-header">
             <div>
               <h1 className="wishlist-main-title">Your Wishlist</h1>
-              {favoriteListings.length > 0 && (
+              {wishlistItems.length > 0 && (
                 <p className="wishlist-count">
-                  {favoriteListings.length}{" "}
-                  {favoriteListings.length === 1 ? "item" : "items"} saved
+                  {wishlistItems.length}{" "}
+                  {wishlistItems.length === 1 ? "item" : "items"} saved
                 </p>
               )}
             </div>
@@ -90,7 +84,7 @@ export default function WishlistPage({
           </div>
         </div>
 
-        {favoriteListings.length === 0 ? (
+        {!loading && wishlistItems.length === 0 ? (
           <div className="wishlist-empty">
             <div className="wishlist-empty-icon">
               <svg
@@ -125,25 +119,27 @@ export default function WishlistPage({
           </div>
         ) : (
           <div className="wishlist-grid">
-            {favoriteListings.map((item) => (
-              <article key={item.id} className="listing-card">
+            {wishlistItems.map((item) => (
+              <article key={item._id} className="listing-card">
                 <div className="listing-image">
-                  <div className="image-placeholder" />
+                  <div className="image-placeholder">
+                    {item.images?.[0] ? (
+                      <img
+                        src={`${API_BASE}${item.images[0]}`}
+                        alt={item.title}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    ) : null}
+                  </div>
 
-                  {/* ✅ Same favorite button as Listings.jsx */}
                   <button
-                    className={`favorite-heart-btn ${
-                      favorites[item.id] ? "favorited" : ""
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFavorite(item.id);
-                    }}
-                    aria-label={
-                      favorites[item.id]
-                        ? "Remove from favorites"
-                        : "Add to favorites"
-                    }
+                    className="favorite-heart-btn favorited"
+                    onClick={(e) => handleRemove(item._id, e)}
+                    aria-label="Remove from favorites"
                   >
                     <svg
                       width="24"
@@ -158,19 +154,20 @@ export default function WishlistPage({
                     >
                       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                     </svg>
-
                     <span className="heart-filled">💚</span>
                   </button>
                 </div>
 
                 <div className="listing-body">
                   <h3 className="listing-title">{item.title}</h3>
-                  <p className="listing-price">EGP {item.price}</p>
+                  <p className="listing-price">
+                    EGP {Number(item.price || 0).toLocaleString()}
+                  </p>
                   <div className="listing-meta">
                     <span className="listing-location">
-                      Location: {item.location}
+                      {item.category || "Category"}
                     </span>
-                    <span className="listing-time">{item.time}</span>
+                    <span className="listing-time">Saved item</span>
                   </div>
                 </div>
               </article>
