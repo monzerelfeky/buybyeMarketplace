@@ -1,12 +1,20 @@
 // components/Listings.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getWishlist, addToWishlist, removeFromWishlist } from "../utils/wishlist";
+import { 
+  getWishlist, 
+  addToWishlist, 
+  removeFromWishlist,
+  getLocalWishlist,
+  addToLocalWishlist,
+  removeFromLocalWishlist
+} from "../utils/wishlist";
 import "../styles/Listings.css";
 
 export default function Listings({ items = [], title, variant = "" }) {
   const [wishlistIds, setWishlistIds] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState({});
   const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
   const navigate = useNavigate();
@@ -19,15 +27,23 @@ export default function Listings({ items = [], title, variant = "" }) {
     async function fetchWishlist() {
       try {
         const token = localStorage.getItem("authToken");
-        if (!token) {
-          setLoading(false);
-          return;
+        
+        if (token) {
+          // User is logged in - fetch from database
+          setIsLoggedIn(true);
+          const data = await getWishlist();
+          setWishlistIds(data.map(item => item._id));
+        } else {
+          // User is guest - load from localStorage
+          setIsLoggedIn(false);
+          const localWishlist = getLocalWishlist();
+          setWishlistIds(localWishlist);
         }
-
-        const data = await getWishlist();
-        setWishlistIds(data.map(item => item._id));
       } catch (err) {
         console.error("Failed to fetch wishlist:", err);
+        // Fallback to local storage if API fails
+        const localWishlist = getLocalWishlist();
+        setWishlistIds(localWishlist);
       } finally {
         setLoading(false);
       }
@@ -40,22 +56,38 @@ export default function Listings({ items = [], title, variant = "" }) {
     e.stopPropagation();
 
     const token = localStorage.getItem("authToken");
-    if (!token) {
-      alert("Please login to use wishlist");
-      return;
-    }
 
-    try {
-      if (wishlistIds.includes(itemId)) {
-        await removeFromWishlist(itemId);
-        setWishlistIds(wishlistIds.filter(id => id !== itemId));
-      } else {
-        await addToWishlist(itemId);
-        setWishlistIds([...wishlistIds, itemId]);
+    if (!token) {
+      // Guest user - use localStorage
+      try {
+        if (wishlistIds.includes(itemId)) {
+          const updated = removeFromLocalWishlist(itemId);
+          setWishlistIds(updated);
+          console.log("🤍 Removed from local wishlist");
+        } else {
+          const updated = addToLocalWishlist(itemId);
+          setWishlistIds(updated);
+          console.log("💚 Added to local wishlist");
+        }
+      } catch (err) {
+        console.error("Local wishlist error:", err);
       }
-    } catch (err) {
-      console.error("Wishlist error:", err);
-      alert("Failed to update wishlist. Please try again.");
+    } else {
+      // Logged in user - use database
+      try {
+        if (wishlistIds.includes(itemId)) {
+          await removeFromWishlist(itemId);
+          setWishlistIds(wishlistIds.filter(id => id !== itemId));
+          console.log("🤍 Removed from database wishlist");
+        } else {
+          await addToWishlist(itemId);
+          setWishlistIds([...wishlistIds, itemId]);
+          console.log("💚 Added to database wishlist");
+        }
+      } catch (err) {
+        console.error("Wishlist error:", err);
+        alert("Failed to update wishlist. Please try again.");
+      }
     }
   };
 
@@ -86,6 +118,11 @@ export default function Listings({ items = [], title, variant = "" }) {
       {title ? (
         <div className="listings-header">
           <h2 className="listings-title">{title}</h2>
+          {!isLoggedIn && wishlistIds.length > 0 && (
+  <p className="listings-header-guest-notice">
+    Login to save your wishlist permanently
+  </p>
+)}
         </div>
       ) : null}
 
