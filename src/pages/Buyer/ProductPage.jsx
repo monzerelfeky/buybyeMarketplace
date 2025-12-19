@@ -3,6 +3,7 @@ import { FaHeart, FaRegHeart, FaShoppingCart } from "react-icons/fa";
 import { useParams } from "react-router-dom";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
+import RateReview from "../../components/RateReview";
 import "../../styles/ProductPage.css";
 
 
@@ -129,7 +130,7 @@ export default function ProductPage() {
                 </div>
 
                 <div className="comment-section">
-                  
+                  <RateReview productId={productId} />
                 </div>
               </div>
             </div>

@@ -4,7 +4,7 @@ const { Schema } = mongoose;
 const CommentSchema = new Schema({
   orderId: { type: Schema.Types.ObjectId, ref: 'Order', required: true },
   itemId: { type: Schema.Types.ObjectId, ref: 'Item' },
-  authorId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  authorId: { type: Schema.Types.ObjectId, ref: 'User'},
   type: { type: String, enum: ['order', 'product'], default: 'order' },
   text: { type: String, required: true },
   rating: { type: Number, min: 1, max: 5 },

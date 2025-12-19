@@ -24,3 +24,21 @@ exports.listComments = async (req, res) => {
     res.status(400).json({ message: 'Bad request' });
   }
 };
+
+// GET /api/comments/product/:productId
+exports.listProductComments = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    if (!productId) return res.status(400).json({ message: "Missing productId" });
+
+    const comments = await Comment.find({ itemId: productId, type: "product" })
+      .sort({ createdAt: -1 })
+      .limit(200);
+
+    res.json(comments);
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ message: "Bad request" });
+  }
+};
+

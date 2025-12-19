@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "../styles/RateReview.css";
 
 const RateReview = ({ productId }) => {
@@ -6,52 +6,91 @@ const RateReview = ({ productId }) => {
   const [currentRating, setCurrentRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [currentText, setCurrentText] = useState("");
-  const [editingId, setEditingId] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleSubmit = () => {
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+  const userId = localStorage.getItem("userId");
+
+  // Fetch username for a given userId
+  const fetchUserName = async (id) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/users/${id}`);
+      if (!res.ok) throw new Error("Failed to fetch user");
+      const data = await res.json();
+      return data.name || "Anonymous";
+    } catch (err) {
+      console.error(err);
+      return "Anonymous";
+    }
+  };
+
+  // Fetch comments for the product
+  const fetchReviews = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_BASE}/api/comments/product/${productId}`);
+      if (!res.ok) throw new Error("Failed to fetch comments");
+      const data = await res.json();
+
+      // Fetch author names for each comment
+      const reviewsWithNames = await Promise.all(
+        data.map(async (comment) => {
+          const authorName = await fetchUserName(comment.authorId);
+          return { ...comment, authorName };
+        })
+      );
+
+      setReviews(reviewsWithNames);
+    } catch (err) {
+      console.error(err);
+      setReviews([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (productId) fetchReviews();
+  }, [productId]);
+
+  // Submit new review
+  const handleSubmit = async () => {
     if (currentRating === 0 || currentText.trim() === "") {
       alert("Please provide a rating and review!");
       return;
     }
 
-    if (editingId !== null) {
-      // Update existing review
-      setReviews((prev) =>
-        prev.map((r) =>
-          r.id === editingId ? { ...r, rating: currentRating, text: currentText } : r
-        )
-      );
-      setEditingId(null);
-    } else {
-      // Add new review
-      const newReview = {
-        id: Date.now(), // simple unique id
-        rating: currentRating,
-        text: currentText,
-      };
-      setReviews((prev) => [...prev, newReview]);
-    }
+    try {
+      const res = await fetch(`${API_BASE}/api/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          itemId: productId,
+          type: "product",
+          text: currentText,
+          rating: currentRating,
+          authorId: userId,
+        }),
+      });
 
-    // Reset input fields
-    setCurrentRating(0);
-    setCurrentText("");
-  };
+      if (!res.ok) throw new Error("Failed to post comment");
+      const newComment = await res.json();
 
-  const handleEdit = (review) => {
-    setEditingId(review.id);
-    setCurrentRating(review.rating);
-    setCurrentText(review.text);
-  };
+      // Fetch author name for the new comment
+      const authorName = await fetchUserName(newComment.authorId);
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this review?")) {
-      setReviews((prev) => prev.filter((r) => r.id !== id));
+      setReviews((prev) => [{ ...newComment, authorName }, ...prev]);
+      setCurrentText("");
+      setCurrentRating(0);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to submit review");
     }
   };
 
   return (
     <div className="rate-review-container">
-      {/* Left column: Review Form */}
+      {/* Review Form */}
       <div className="review-form">
         <h2>Rate & Review Product</h2>
         <div className="stars">
@@ -73,36 +112,28 @@ const RateReview = ({ productId }) => {
           onChange={(e) => setCurrentText(e.target.value)}
         />
         <button className="submit-btn" onClick={handleSubmit}>
-          {editingId !== null ? "Update Review" : "Submit Review"}
+          Submit Review
         </button>
       </div>
 
-      {/* Right column: Reviews List */}
+      {/* Reviews List */}
       <div className="reviews-list">
-        {reviews.length === 0 ? (
+        {loading ? (
+          <p>Loading reviews...</p>
+        ) : reviews.length === 0 ? (
           <p>No reviews yet. Be the first to review!</p>
         ) : (
           reviews.map((review) => (
-            <div key={review.id} className="single-review">
+            <div key={review._id} className="single-review">
               <div className="stars">
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <span
-                    key={star}
-                    className={`star ${star <= review.rating ? "filled" : ""}`}
-                  >
+                  <span key={star} className={`star ${star <= review.rating ? "filled" : ""}`}>
                     ★
                   </span>
                 ))}
               </div>
               <p>{review.text}</p>
-              <div className="review-actions">
-                <button className="edit-btn" onClick={() => handleEdit(review)}>
-                  Edit
-                </button>
-                <button className="delete-btn" onClick={() => handleDelete(review.id)}>
-                  Delete
-                </button>
-              </div>
+              <small>By: {review.authorName}</small>
             </div>
           ))
         )}

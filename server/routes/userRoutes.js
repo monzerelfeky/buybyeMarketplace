@@ -13,6 +13,7 @@ const {
   updatePaymentMethod,
   deletePaymentMethod,
   setDefaultPaymentMethod,
+  getUserById
 } = require('../controllers/userController');
 
 const router = express.Router();
@@ -31,5 +32,7 @@ router.post('/me/payment-methods', protect, addPaymentMethod);
 router.put('/me/payment-methods/:index', protect, updatePaymentMethod);
 router.delete('/me/payment-methods/:index', protect, deletePaymentMethod);
 router.patch('/me/payment-methods/:index/default', protect, setDefaultPaymentMethod);
+
+router.get('/:id', getUserById);
 
 module.exports = router;

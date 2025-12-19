@@ -343,3 +343,14 @@ exports.setDefaultPaymentMethod = async (req, res) => {
     return res.status(500).json({ message: 'Server error' });
   }
 };
+
+exports.getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('name'); // just return name/email
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    return res.json(user);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
