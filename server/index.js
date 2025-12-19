@@ -38,7 +38,7 @@ app.use('/api/flags', flagsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/sellers', sellersRoutes);
-pp.use("/api/wishlist", authMiddleware, wishlistRoutes);
+app.use("/api/wishlist", authMiddleware, wishlistRoutes);
 
 app.get('/', (req, res) => res.send('Marketplace API'));
 
