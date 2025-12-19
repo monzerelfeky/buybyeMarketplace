@@ -3,6 +3,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 const UPLOADS_DIR = path.join(__dirname, '../../uploads/images');
+const UPLOADS_URL_PREFIX = '/uploads/images';
 
 // Ensure uploads directory exists
 if (!fs.existsSync(UPLOADS_DIR)) {
@@ -47,6 +48,40 @@ function saveBase64Image(base64String) {
   }
 }
 
+function normalizeImagePath(value) {
+  if (!value || typeof value !== 'string') return null;
+
+  if (value.startsWith('data:')) return value;
+
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    try {
+      const parsed = new URL(value);
+      return parsed.pathname.startsWith('/uploads/')
+        ? parsed.pathname
+        : `${UPLOADS_URL_PREFIX}/${path.basename(parsed.pathname)}`;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  if (value.includes('uploads/images/')) {
+    return `${UPLOADS_URL_PREFIX}/${path.basename(value)}`;
+  }
+
+  if (value.startsWith('/uploads/')) {
+    if (!value.startsWith(`${UPLOADS_URL_PREFIX}/`)) {
+      return `${UPLOADS_URL_PREFIX}/${path.basename(value)}`;
+    }
+    return value;
+  }
+
+  if (value.startsWith('/')) {
+    return value;
+  }
+
+  return `${UPLOADS_URL_PREFIX}/${value}`;
+}
+
 /**
  * Process image array - converts base64 strings to filenames
  * @param {array} images - Array of base64 strings or filenames
@@ -57,13 +92,18 @@ function processImages(images) {
 
   return images
     .map((img) => {
-      // If already a filename (stored path), keep it
-      if (typeof img === 'string' && !img.startsWith('data:') && img.includes('.')) {
-        return img;
-      }
       // If base64 data URL or raw base64, save it
       if (typeof img === 'string') {
-        return saveBase64Image(img);
+        if (img.startsWith('data:')) {
+          const filename = saveBase64Image(img);
+          return filename ? `${UPLOADS_URL_PREFIX}/${filename}` : null;
+        }
+        const looksLikeBase64 = !img.startsWith('http') && !img.startsWith('/uploads/') && !img.includes('.');
+        if (looksLikeBase64 && img.length > 100) {
+          const filename = saveBase64Image(img);
+          return filename ? `${UPLOADS_URL_PREFIX}/${filename}` : null;
+        }
+        return normalizeImagePath(img);
       }
       return null;
     })
@@ -79,8 +119,13 @@ function deleteImages(filenames) {
 
   filenames.forEach((filename) => {
     try {
-      if (!filename || filename.startsWith('http') || filename.includes('/')) return; // Skip URLs
-      const filepath = path.join(UPLOADS_DIR, filename);
+      if (!filename) return;
+      if (filename.startsWith('http')) return;
+      const normalized = filename.startsWith('/uploads/')
+        ? path.basename(filename)
+        : path.basename(filename);
+      if (!normalized) return;
+      const filepath = path.join(UPLOADS_DIR, normalized);
       if (fs.existsSync(filepath)) {
         fs.unlinkSync(filepath);
         console.debug(`[imageHandler] Deleted image: ${filename}`);

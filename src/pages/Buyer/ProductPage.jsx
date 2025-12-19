@@ -45,7 +45,32 @@ export default function ProductPage() {
   };
 
   const handleAddToCart = () => {
-    console.log("Added to cart:", { product, quantity });
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      alert("Please login to add items to cart");
+      return;
+    }
+    const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+    fetch(`${API_BASE}/api/users/me/cart`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ itemId: product._id, quantity }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Add to cart failed");
+        return res.json();
+      })
+      .then(() => {
+        window.dispatchEvent(new Event("cart-updated"));
+        alert("Added to cart");
+      })
+      .catch((err) => {
+        console.error("Add to cart error:", err);
+        alert("Failed to add to cart");
+      });
   };
 
   const toggleWishlist = () => {
@@ -72,7 +97,18 @@ export default function ProductPage() {
               <img
                 src={
                   product.images?.[0]
-                    ? `${process.env.REACT_APP_API_BASE || "http://localhost:5000"}${product.images[0]}`
+                    ? (() => {
+                        const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+                        const img = product.images[0];
+                        if (img.startsWith("http://") || img.startsWith("https://")) return img;
+                        if (img.startsWith("data:")) return img;
+                        if (img.includes("uploads/images/")) {
+                          const filename = img.split("uploads/images/").pop();
+                          return `${API_BASE}/uploads/images/${filename}`;
+                        }
+                        if (img.startsWith("/")) return `${API_BASE}${img}`;
+                        return `${API_BASE}/uploads/images/${img}`;
+                      })()
                     : "https://via.placeholder.com/300"
                 }
                 alt={product.title}

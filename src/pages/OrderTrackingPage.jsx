@@ -89,8 +89,12 @@ export default function OrderTrackingPage() {
         <div className="order-header">
           <h1>Order #{order.orderNo || order._id}</h1>
           <div className="order-meta">
-            <span>Total: <strong>${order.totalPrice}</strong></span>
-            <span>Placed: {order.placedAt ? new Date(order.placedAt).toLocaleString() : "N/A"}</span>
+            <span>
+              Total: <strong>${order.totalPrice}</strong>
+            </span>
+            <span>
+              Placed: {order.placedAt ? new Date(order.placedAt).toLocaleString() : "N/A"}
+            </span>
           </div>
         </div>
 
@@ -102,8 +106,21 @@ export default function OrderTrackingPage() {
               <ol className="timeline">
                 {STATUS_STEPS.map((step, idx) => (
                   <li key={step} className={`timeline-step ${idx <= currentStatusIndex ? "active" : ""}`}>
-                    <div className="step-marker" style={{ backgroundColor: idx <= currentStatusIndex ? statusColors[step] : "#ccc" }}>
-                      {idx + 1}
+                    <div className="step-marker-wrap">
+                      <div
+                        className={`step-marker ${idx < currentStatusIndex ? "completed" : ""} ${
+                          idx === currentStatusIndex ? "active" : ""
+                        }`}
+                        style={{
+                          backgroundColor: idx <= currentStatusIndex ? statusColors[step] : "#ccc",
+                          color: idx <= currentStatusIndex ? statusColors[step] : "#ccc",
+                        }}
+                      >
+                        {idx + 1}
+                      </div>
+                      {idx < STATUS_STEPS.length - 1 && (
+                        <div className={`step-line ${idx < currentStatusIndex ? "completed" : ""}`} />
+                      )}
                     </div>
                     <div className="step-content">
                       <div className="step-title">{step}</div>
@@ -128,17 +145,10 @@ export default function OrderTrackingPage() {
               
               <div className="report-buttons">
                 <button
-                  className="primary"
-                  onClick={() => navigate(`/report-order`)}
-                >
-                  Report a product
-                </button>
-
-                <button
                   className="secondary"
-                  onClick={() => navigate(`/report-seller`)}
+                  onClick={() => navigate(`/report-seller/${order._id}`)}
                 >
-                  flag seller
+                  Flag the seller
                 </button>
               </div>
             </section>

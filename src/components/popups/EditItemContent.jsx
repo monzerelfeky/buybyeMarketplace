@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import "../../styles/seller/editItem.css";
 
 export default function EditItemContent({ item, onClose, onSave }) {
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
   const [title, setTitle] = useState(item.title);
   const [price, setPrice] = useState(item.price !== undefined && item.price !== null ? String(item.price) : '');
   const [quantity, setQuantity] = useState(
@@ -189,7 +190,13 @@ export default function EditItemContent({ item, onClose, onSave }) {
           {images.length > 0 && (
             <div className="ei-preview-grid">
               {images.map((img) => {
-                const src = typeof img === "string" ? img : img.base64;
+                const src = typeof img === "string"
+                  ? (img.startsWith("http://") || img.startsWith("https://") || img.startsWith("data:"))
+                    ? img
+                    : img.startsWith("/")
+                      ? `${API_BASE}${img}`
+                      : `${API_BASE}/uploads/images/${img}`
+                  : img.base64;
                 const key = typeof img === "string" ? img : img.id;
                 const removeId = typeof img === "string" ? img : img.id;
                 return (

@@ -105,6 +105,11 @@ export default function Listings({ items = [], title, variant = "" }) {
               return img;
             }
 
+            if (img.includes('uploads/images/')) {
+              const filename = img.split('uploads/images/').pop();
+              return `${API_BASE}/uploads/images/${filename}`;
+            }
+
             // Handle file paths and filenames
             if (img.startsWith('/uploads/')) {
               return `${API_BASE}${img}`;

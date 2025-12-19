@@ -57,6 +57,10 @@ export default function WishlistPage() {
     if (!img || typeof img !== "string") return null;
     if (img.startsWith("http://") || img.startsWith("https://")) return img;
     if (img.startsWith("data:")) return img;
+    if (img.includes("uploads/images/")) {
+      const filename = img.split("uploads/images/").pop();
+      return `${API_BASE}/uploads/images/${filename}`;
+    }
     if (img.startsWith("/uploads/")) return `${API_BASE}${img}`;
     if (img.startsWith("/")) return `${API_BASE}${img}`;
     return `${API_BASE}/uploads/images/${img}`;

@@ -70,7 +70,6 @@ import OrderTrackingPage from "./pages/OrderTrackingPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import SellerNotificationsPage from "./pages/SellerNotificationsPage";
 
-import ReportOrder from "./pages/ReportOrder";
 
 
 export default function App() {
@@ -135,7 +134,7 @@ export default function App() {
         <Route path="/order-history" element={<OrderHistoryPage />} />
 
         {/*Report Seller Route*/}
-        <Route path="/report-seller" element={<ReportSeller />} />
+        <Route path="/report-seller/:orderId" element={<ReportSeller />} />
 
         {/*Order Tracking Route*/}
         <Route path="/order-tracking/:orderId" element={<OrderTrackingPage />} />
@@ -143,7 +142,6 @@ export default function App() {
         {/*Notifications Route*/}
         <Route path="/notifications" element={<NotificationsPage />} />
 
-       <Route path="/report-order" element={<ReportOrder />} />
 
       </Routes>
     </SellerProvider>
