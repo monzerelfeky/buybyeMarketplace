@@ -266,7 +266,7 @@ export default function Listings({ items = [], title, variant = "" }) {
                 <h3 className="listing-title">{item.title}</h3>
                 <p className="listing-price">EGP {item.price.toLocaleString()}</p>
                 <div className="listing-meta">
-                  <span className="listing-location">
+                  <span className="listing-category">
                     {item.category || "Category"}
                   </span>
                   <span className="listing-time">
