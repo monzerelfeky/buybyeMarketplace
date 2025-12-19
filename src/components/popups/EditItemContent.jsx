@@ -5,6 +5,9 @@ import "../../styles/seller/editItem.css";
 export default function EditItemContent({ item, onClose, onSave }) {
   const [title, setTitle] = useState(item.title);
   const [price, setPrice] = useState(item.price !== undefined && item.price !== null ? String(item.price) : '');
+  const [quantity, setQuantity] = useState(
+    item.quantity !== undefined && item.quantity !== null ? String(item.quantity) : ""
+  );
   const [description, setDescription] = useState(item.description);
   const [category, setCategory] = useState(item.category || "Electronics");
   const [images, setImages] = useState(item.images || []);
@@ -63,6 +66,7 @@ export default function EditItemContent({ item, onClose, onSave }) {
       ...item,
       title: title.trim(),
       price: normalizedPrice,
+      quantity: Number.isFinite(Number(quantity)) ? Number(quantity) : 0,
       description: description.trim(),
       category,
       images: allImages,  // Send all images (existing + new) to backend
@@ -111,6 +115,21 @@ export default function EditItemContent({ item, onClose, onSave }) {
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             placeholder="299.99"
+            required
+          />
+        </div>
+
+        {/* Quantity */}
+        <div className="ei-field">
+          <label className="ei-label">Quantity</label>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            className="ei-input"
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            placeholder="0"
             required
           />
         </div>
