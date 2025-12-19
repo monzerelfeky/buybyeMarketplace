@@ -65,6 +65,8 @@ const UserSchema = new Schema({
   },
   isActive: { type: Boolean, default: true },
   flagLock: FlagLockSchema,
+  resetToken: String,
+  resetTokenExpires: Date,
   createdAt: { type: Date, default: Date.now },
   updatedAt: Date
 });
