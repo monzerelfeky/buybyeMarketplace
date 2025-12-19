@@ -70,6 +70,9 @@ import OrderTrackingPage from "./pages/OrderTrackingPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import SellerNotificationsPage from "./pages/SellerNotificationsPage";
 
+import ReportOrder from "./pages/ReportOrder";
+
+
 export default function App() {
   return (
     <SellerProvider>
@@ -139,6 +142,9 @@ export default function App() {
 
         {/*Notifications Route*/}
         <Route path="/notifications" element={<NotificationsPage />} />
+
+       <Route path="/report-order" element={<ReportOrder />} />
+
       </Routes>
     </SellerProvider>
   );

@@ -1,5 +1,5 @@
   // src/components/Header.jsx
-  import React, { useState, useEffect } from "react";
+  import React, { useState, useEffect, useRef } from "react";
   import { useLocation, useNavigate } from "react-router-dom";
   import "../styles/Header.css";
   import UniversalModal from "./popups/UniversalModal";
@@ -20,6 +20,7 @@
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [authRefresh, setAuthRefresh] = useState(0); // trigger re-render after login
+    const lastInputAtRef = useRef(0);
 
     const location = useLocation();
     const navigate = useNavigate();
@@ -70,8 +71,13 @@
 
     // SEARCH HANDLERS
     const handleSearch = () => {
-      if (!searchQuery.trim()) return;
-    navigate(`/category/all?query=${encodeURIComponent(searchQuery)}`);
+      const trimmed = searchQuery.trim();
+      if (!trimmed) return;
+      const isCategoryPage = location.pathname.startsWith("/category/");
+      const targetPath = isCategoryPage ? location.pathname : "/category/all";
+      const params = new URLSearchParams(isCategoryPage ? location.search : "");
+      params.set("query", trimmed);
+      navigate(`${targetPath}?${params.toString()}`);
     };
 
     const handleSearchKeyDown = (e) => {
@@ -84,9 +90,11 @@
 
       const timeout = setTimeout(() => {
         const params = new URLSearchParams(location.search);
-        if (searchQuery.trim()) {
-          params.set("query", searchQuery.trim());
+        const trimmed = searchQuery.trim();
+        if (trimmed) {
+          params.set("query", trimmed);
         } else {
+          if (!params.get("query")) return;
           params.delete("query");
         }
         navigate(`${location.pathname}?${params.toString()}`, { replace: true });
@@ -94,6 +102,18 @@
 
       return () => clearTimeout(timeout);
     }, [location.pathname, location.search, navigate, searchQuery]);
+
+    useEffect(() => {
+      const isCategoryPage = location.pathname.startsWith("/category/");
+      if (!isCategoryPage) return;
+      const params = new URLSearchParams(location.search);
+      const queryParam = params.get("query") || "";
+      const timeSinceInput = Date.now() - lastInputAtRef.current;
+      if (timeSinceInput < 300) return;
+      if (queryParam !== searchQuery) {
+        setSearchQuery(queryParam);
+      }
+    }, [location.pathname, location.search, searchQuery]);
 
   // Require login before allowing seller-only actions/navigation
   const ensureLoggedIn = () => {
@@ -122,7 +142,10 @@
                   className="header-search-input"
                   placeholder="Search marketplace..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    lastInputAtRef.current = Date.now();
+                    setSearchQuery(e.target.value);
+                  }}
                   onKeyDown={handleSearchKeyDown}
                 />
 

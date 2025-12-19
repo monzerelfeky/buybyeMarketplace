@@ -6,6 +6,7 @@ export default function CreateItemContent({ onSave, onClose }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [quantity, setQuantity] = useState("");
   const [category, setCategory] = useState("Electronics");
   const [deliveryEstimate, setDeliveryEstimate] = useState("5-7 days");
   const [images, setImages] = useState([]);
@@ -53,21 +54,17 @@ export default function CreateItemContent({ onSave, onClose }) {
     // Normalize and round price to two decimals to avoid floating-point drift
     const normalizedPrice = Number.isFinite(Number(price)) ? Math.round(Number(price) * 100) / 100 : 0;
 
-      const newItem = {
+    const newItem = {
       seller: localStorage.getItem("userId"), // or parsed user._id
       title,
       description,
       price: normalizedPrice,
+      quantity: Number.isFinite(Number(quantity)) ? Number(quantity) : 0,
       category,
       deliveryEstimate,
       isActive: true,
       images: imageStrings
     };
-
-
-onSave?.(newItem);
-onClose?.();
-
 
     // Pass item with images to context
     onSave?.(newItem, images);
@@ -108,7 +105,7 @@ onClose?.();
           />
         </div>
 
-        {/* Price + Category */}
+        {/* Price + Quantity */}
         <div className="ci-row">
           <div className="ci-field half">
             <label className="ci-label">Price ($)</label>
@@ -124,6 +121,23 @@ onClose?.();
             />
           </div>
 
+          <div className="ci-field half">
+            <label className="ci-label">Quantity</label>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              className="ci-input"
+              placeholder="0"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              required
+            />
+          </div>
+        </div>
+
+        {/* Category */}
+        <div className="ci-row">
           <div className="ci-field half">
             <label className="ci-label">Category</label>
             <select
