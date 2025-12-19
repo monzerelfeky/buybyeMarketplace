@@ -3,14 +3,17 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../styles/Login.css";
 
+
 export default function LoginContent({ onClose, onLoginSuccess }) {
   const navigate = useNavigate();
+
   const [showPassword, setShowPassword] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
+
   const [showForgotToast, setShowForgotToast] = useState(false);
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -74,36 +77,42 @@ export default function LoginContent({ onClose, onLoginSuccess }) {
     setServerError("");
 
     try {
-      const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+
+      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
+      const endpoint = isSignUp ? '/api/auth/register' : '/api/auth/login';
+      const payload = isSignUp
+        ? { name: formData.name, email: formData.email, password: formData.password, isSeller: false }
+        : { email: formData.email, password: formData.password };
+
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setServerError(data.message || 'Authentication failed');
+        setIsLoading(false);
+        return;
+      }
+
+      // Store token and user info in localStorage
+      if (data.token) {
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
+      // If user just signed up, immediately log them in to get token
       if (isSignUp) {
-        const registerRes = await fetch(`${API_BASE}/api/auth/register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: formData.name,
-            email: formData.email,
-            password: formData.password,
-            isSeller: false,
-          }),
-        });
-
-        const registerData = await registerRes.json();
-        if (!registerRes.ok) {
-          setServerError(registerData.message || "Authentication failed");
-          setIsLoading(false);
-          return;
-        }
-
         const loginRes = await fetch(`${API_BASE}/api/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: formData.email,
-            password: formData.password,
-          }),
+          body: JSON.stringify({ email: formData.email, password: formData.password }),
         });
 
         const loginData = await loginRes.json();
+
         if (!loginRes.ok) {
           setServerError(loginData.message || "Signed up, but login failed");
           setIsLoading(false);
@@ -113,6 +122,17 @@ export default function LoginContent({ onClose, onLoginSuccess }) {
         localStorage.setItem("authToken", loginData.token);
         localStorage.setItem("user", JSON.stringify(loginData.user));
       } else {
+
+        // login flow (your existing code)
+        localStorage.setItem("authToken", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("userId", data.user._id);
+
+      }
+
+
+      // Close modal
+
         const res = await fetch(`${API_BASE}/api/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -141,6 +161,7 @@ export default function LoginContent({ onClose, onLoginSuccess }) {
 
       window.dispatchEvent(new Event("auth-changed"));
       onLoginSuccess?.();
+
       onClose?.();
     } catch (err) {
       console.error("Auth error:", err);
@@ -316,19 +337,13 @@ export default function LoginContent({ onClose, onLoginSuccess }) {
         {serverError && <p className="form-error" style={{ marginBottom: '16px', color: '#d32f2f', fontSize: '14px' }}>{serverError}</p>}
 
         {!isSignUp && (
-          <div className="remember-forgot-row">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-              />
-              Remember me
-            </label>
-            <button type="button" className="forgot-link" onClick={handleForgotClick}>
+
+        
+            
+            <a href="#" className="forgot-link">
               Forgot password?
-            </button>
-          </div>
+            </a>
+
         )}
         {showForgotToast && (
           <div className="forgot-toast">Opening reset page...</div>
@@ -364,6 +379,7 @@ export default function LoginContent({ onClose, onLoginSuccess }) {
           type="button"
           className="social-btn"
           onClick={() => handleSocialLogin("Google")}
+          style={{ width: '100%' }}
         >
           <svg className="social-icon" viewBox="0 0 24 24">
             <path
