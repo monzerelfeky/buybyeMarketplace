@@ -2,7 +2,10 @@
   const crypto = require('crypto');
   const jwt = require('jsonwebtoken');
   const nodemailer = require('nodemailer');
+  const { OAuth2Client } = require('google-auth-library');
   const User = require('../models/User');
+
+  const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
   // POST /api/auth/register
   exports.register = async (req, res) => {
@@ -12,7 +15,7 @@
       const existing = await User.findOne({ email });
       if (existing) return res.status(400).json({ message: 'Email in use' });
       const passwordHash = await bcrypt.hash(password, 10);
-      const user = new User({ name, email, passwordHash, isSeller: !!isSeller });
+      const user = new User({ name, email, passwordHash, isSeller: !!isSeller, authProvider: 'local' });
       await user.save();
       res.status(201).json({ id: user._id, email: user.email, name: user.name });
     } catch (err) {
@@ -27,10 +30,68 @@
       const { email, password } = req.body;
       const user = await User.findOne({ email });
       if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+      if (!user.passwordHash) {
+        return res.status(400).json({ message: 'Use Google login for this account' });
+      }
       const ok = await bcrypt.compare(password, user.passwordHash);
       if (!ok) return res.status(401).json({ message: 'Invalid credentials' });
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'devsecret', { expiresIn: '7d' });
-      res.json({ token, user: { id: user._id, email: user.email, name: user.name } });
+      res.json({ token, user: { id: user._id, _id: user._id, email: user.email, name: user.name } });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: 'Server error' });
+    }
+  };
+
+  // POST /api/auth/google
+  exports.googleLogin = async (req, res) => {
+    try {
+      const { credential } = req.body;
+      if (!credential) return res.status(400).json({ message: 'Missing credential' });
+      if (!process.env.GOOGLE_CLIENT_ID) {
+        return res.status(500).json({ message: 'Google login not configured' });
+      }
+
+      const ticket = await googleClient.verifyIdToken({
+        idToken: credential,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      const payload = ticket.getPayload();
+      if (!payload || !payload.email) {
+        return res.status(401).json({ message: 'Invalid Google token' });
+      }
+
+      let user = await User.findOne({ email: payload.email });
+      let needsSave = false;
+
+      if (!user) {
+        user = new User({
+          name: payload.name || payload.email.split('@')[0],
+          email: payload.email,
+          passwordHash: undefined,
+          isSeller: false,
+          authProvider: 'google',
+          googleId: payload.sub,
+        });
+        needsSave = true;
+      } else {
+        if (!user.googleId) {
+          user.googleId = payload.sub;
+          needsSave = true;
+        }
+        if (!user.authProvider) {
+          user.authProvider = user.passwordHash ? 'local' : 'google';
+          needsSave = true;
+        }
+      }
+
+      if (needsSave) {
+        user.updatedAt = new Date();
+        await user.save();
+      }
+
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'devsecret', { expiresIn: '7d' });
+      res.json({ token, user: { id: user._id, _id: user._id, email: user.email, name: user.name } });
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: 'Server error' });
