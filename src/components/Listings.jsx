@@ -11,6 +11,9 @@ import { getWishlist, addToWishlist, removeFromWishlist } from "../utils/wishlis
 export default function WishlistPage() {
   const [favorites, setFavorites] = useState({}); // Tracks wishlist items (_id => true)
   const [loading, setLoading] = useState(true);
+  const [currentImageIndex, setCurrentImageIndex] = useState({});
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+  const navigate = useNavigate();
 
   // Helper: Load guest wishlist from localStorage
   const getLocalWishlist = () => {

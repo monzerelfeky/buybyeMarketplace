@@ -39,7 +39,7 @@ export default function HomePage() {
           <p>No items available at the moment.</p>
         </div>
       ) : (
-        <Listings items={items} />
+        <Listings items={items} title="Latest Listings" />
       )}
       <Footer />
     </div>

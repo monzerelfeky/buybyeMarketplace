@@ -1,5 +1,5 @@
   // src/components/Header.jsx
-  import React, { useState, useEffect } from "react";
+  import React, { useState, useEffect, useRef } from "react";
   import { useLocation, useNavigate } from "react-router-dom";
   import "../styles/Header.css";
   import UniversalModal from "./popups/UniversalModal";
@@ -20,6 +20,8 @@
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [authRefresh, setAuthRefresh] = useState(0); // trigger re-render after login
+    const [currentUser, setCurrentUser] = useState(null);
+    const lastInputAtRef = useRef(0);
 
     const location = useLocation();
     const navigate = useNavigate();
@@ -28,8 +30,9 @@
 
     // Check if user is logged in (re-evaluates when authRefresh changes)
     const isLoggedIn = !!localStorage.getItem('authToken');
+    const isSeller = !!currentUser?.isSeller;
 
-    const categories = ["Cars", "Real Estate", "Mobiles", "Jobs", "Electronics", "Home & Garden"];
+    const categories = ["Cars", "Sports & fitness", "Electronics", "Home & Garden"];
 
     // IMPORTANT FIX → Profile stays buyer unless it's under /seller
     // Detect if coming from seller
@@ -56,27 +59,104 @@
 
     // Keep header and seller context in sync when auth changes (storage or custom event)
     useEffect(() => {
+      const loadUserFromStorage = () => {
+        const raw = localStorage.getItem("user");
+        if (!raw) {
+          setCurrentUser(null);
+          return;
+        }
+        try {
+          setCurrentUser(JSON.parse(raw));
+        } catch {
+          setCurrentUser(null);
+        }
+      };
+
+      const fetchUserFromApi = async () => {
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+          setCurrentUser(null);
+          return;
+        }
+        try {
+          const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+          const res = await fetch(`${API_BASE}/api/users/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (!res.ok) throw new Error("Profile fetch failed");
+          const data = await res.json();
+          const stored = localStorage.getItem("user");
+          const storedUser = stored ? JSON.parse(stored) : {};
+          const nextUser = { ...storedUser, ...data };
+          localStorage.setItem("user", JSON.stringify(nextUser));
+          setCurrentUser(nextUser);
+        } catch (err) {
+          console.error("Failed to refresh user profile:", err);
+        }
+      };
+
       const handleAuthChange = () => {
         setAuthRefresh((p) => p + 1);
         refresh();
+        loadUserFromStorage();
+        fetchUserFromApi();
       };
-      window.addEventListener('auth-changed', handleAuthChange);
-      window.addEventListener('storage', handleAuthChange);
+
+      loadUserFromStorage();
+      if (isLoggedIn) fetchUserFromApi();
+      window.addEventListener("auth-changed", handleAuthChange);
+      window.addEventListener("storage", handleAuthChange);
       return () => {
-        window.removeEventListener('auth-changed', handleAuthChange);
-        window.removeEventListener('storage', handleAuthChange);
+        window.removeEventListener("auth-changed", handleAuthChange);
+        window.removeEventListener("storage", handleAuthChange);
       };
-    }, [refresh]);
+    }, [authRefresh, isLoggedIn, refresh]);
 
     // SEARCH HANDLERS
     const handleSearch = () => {
-      if (!searchQuery.trim()) return;
-      navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
+      const trimmed = searchQuery.trim();
+      if (!trimmed) return;
+      const isCategoryPage = location.pathname.startsWith("/category/");
+      const targetPath = isCategoryPage ? location.pathname : "/category/all";
+      const params = new URLSearchParams(isCategoryPage ? location.search : "");
+      params.set("query", trimmed);
+      navigate(`${targetPath}?${params.toString()}`);
     };
 
     const handleSearchKeyDown = (e) => {
       if (e.key === "Enter") handleSearch();
     };
+
+    useEffect(() => {
+      const isCategoryPage = location.pathname.startsWith("/category/");
+      if (!isCategoryPage) return;
+
+      const timeout = setTimeout(() => {
+        const params = new URLSearchParams(location.search);
+        const trimmed = searchQuery.trim();
+        if (trimmed) {
+          params.set("query", trimmed);
+        } else {
+          if (!params.get("query")) return;
+          params.delete("query");
+        }
+        navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+      }, 250);
+
+      return () => clearTimeout(timeout);
+    }, [location.pathname, location.search, navigate, searchQuery]);
+
+    useEffect(() => {
+      const isCategoryPage = location.pathname.startsWith("/category/");
+      if (!isCategoryPage) return;
+      const params = new URLSearchParams(location.search);
+      const queryParam = params.get("query") || "";
+      const timeSinceInput = Date.now() - lastInputAtRef.current;
+      if (timeSinceInput < 300) return;
+      if (queryParam !== searchQuery) {
+        setSearchQuery(queryParam);
+      }
+    }, [location.pathname, location.search, searchQuery]);
 
   // Require login before allowing seller-only actions/navigation
   const ensureLoggedIn = () => {
@@ -105,7 +185,10 @@
                   className="header-search-input"
                   placeholder="Search marketplace..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    lastInputAtRef.current = Date.now();
+                    setSearchQuery(e.target.value);
+                  }}
                   onKeyDown={handleSearchKeyDown}
                 />
 
@@ -129,6 +212,10 @@
                   className="post-btn"
                   onClick={() => {
                     if (!ensureLoggedIn()) return;
+                    if (isSeller) {
+                      navigate("/seller/dashboard");
+                      return;
+                    }
                     setIsBecomeSellerOpen(true);
                   }}
                 >
@@ -170,17 +257,19 @@
           {/* BUYER CATEGORIES */}
           {!isSellerPage && (
             <div className="categories-bar">
-              {categories.map((cat) => (
-                <button 
-                  key={cat} 
-                  className="category-btn"
-                  onClick={() =>
-                    navigate(`/category/${cat.toLowerCase().replace(/ /g, "-")}`)
-                  }
-                >
-                  {cat}
-                </button>
-              ))}
+              {categories.map((cat) => {
+                const slug = cat.toLowerCase().replace(/ /g, "-");
+                const isActiveCategory = location.pathname === `/category/${slug}`;
+                return (
+                  <button 
+                    key={cat} 
+                    className={`category-btn${isActiveCategory ? " active" : ""}`}
+                    onClick={() => navigate(`/category/${slug}`)}
+                  >
+                    {cat}
+                  </button>
+                );
+              })}
             </div>
           )}
 
@@ -239,6 +328,7 @@
             setIsBecomeSellerOpen(true);
           }}
           isLoggedIn={isLoggedIn}
+          isSeller={isSeller}
         />
 
         {/* LOGIN MODAL */}
@@ -283,7 +373,33 @@
           onClose={() => setIsBecomeSellerOpen(false)}
           type="become-seller"
         >
-          <BecomeSellerContent onConfirm={() => navigate("/seller/dashboard")} />
+          <BecomeSellerContent
+            onConfirm={async () => {
+              const token = localStorage.getItem("authToken");
+              if (!token) return;
+              try {
+                const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+                const res = await fetch(`${API_BASE}/api/users/me/seller`, {
+                  method: "PATCH",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                  },
+                  body: JSON.stringify({ isSeller: true }),
+                });
+                if (!res.ok) throw new Error("Failed to update seller status");
+                const data = await res.json();
+                const nextUser = { ...currentUser, ...data };
+                localStorage.setItem("user", JSON.stringify(nextUser));
+                setCurrentUser(nextUser);
+                window.dispatchEvent(new Event("auth-changed"));
+                setIsBecomeSellerOpen(false);
+                navigate("/seller/dashboard");
+              } catch (err) {
+                console.error("Failed to activate seller account:", err);
+              }
+            }}
+          />
         </UniversalModal>
 
         <CartPanel 

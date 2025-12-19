@@ -14,7 +14,28 @@ function ensureSingleDefault(list, defaultIndex) {
 
 exports.getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('name email phone');
+    const user = await User.findById(req.user.id).select('name email phone isSeller');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    return res.json(user);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.updateSellerStatus = async (req, res) => {
+  try {
+    const { isSeller } = req.body;
+    if (typeof isSeller !== 'boolean') {
+      return res.status(400).json({ message: 'isSeller must be boolean' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { isSeller, updatedAt: new Date() },
+      { new: true }
+    ).select('name email phone isSeller');
+
     if (!user) return res.status(404).json({ message: 'User not found' });
     return res.json(user);
   } catch (err) {
@@ -338,6 +359,110 @@ exports.setDefaultPaymentMethod = async (req, res) => {
     await user.save();
 
     return res.json(user.paymentMethods);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Cart
+exports.getCart = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id)
+      .select('cart updatedAt')
+      .populate('cart.itemId', 'title price images seller quantity isActive');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    return res.json(user.cart || []);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.addToCart = async (req, res) => {
+  try {
+    const { itemId, quantity } = req.body;
+    if (!itemId) return res.status(400).json({ message: 'Missing itemId' });
+
+    const qty = Math.max(1, Number(quantity) || 1);
+    const user = await User.findById(req.user.id).select('cart updatedAt');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const existingIndex = user.cart.findIndex((c) => String(c.itemId) === String(itemId));
+    if (existingIndex >= 0) {
+      user.cart[existingIndex].quantity += qty;
+      user.cart[existingIndex].addedAt = new Date();
+    } else {
+      user.cart.push({ itemId, quantity: qty, addedAt: new Date() });
+    }
+
+    user.updatedAt = new Date();
+    await user.save();
+    const populated = await user.populate('cart.itemId', 'title price images seller quantity isActive');
+    return res.status(201).json(populated.cart || []);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.updateCartItem = async (req, res) => {
+  try {
+    const { itemId } = req.params;
+    const { quantity } = req.body;
+    if (!itemId) return res.status(400).json({ message: 'Missing itemId' });
+
+    const qty = Number(quantity);
+    const user = await User.findById(req.user.id).select('cart updatedAt');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const idx = user.cart.findIndex((c) => String(c.itemId) === String(itemId));
+    if (idx === -1) return res.status(404).json({ message: 'Cart item not found' });
+
+    if (!Number.isFinite(qty) || qty <= 0) {
+      user.cart.splice(idx, 1);
+    } else {
+      user.cart[idx].quantity = qty;
+      user.cart[idx].addedAt = new Date();
+    }
+
+    user.updatedAt = new Date();
+    await user.save();
+    const populated = await user.populate('cart.itemId', 'title price images seller quantity isActive');
+    return res.json(populated.cart || []);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.removeCartItem = async (req, res) => {
+  try {
+    const { itemId } = req.params;
+    if (!itemId) return res.status(400).json({ message: 'Missing itemId' });
+
+    const user = await User.findById(req.user.id).select('cart updatedAt');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    user.cart = user.cart.filter((c) => String(c.itemId) !== String(itemId));
+    user.updatedAt = new Date();
+    await user.save();
+    const populated = await user.populate('cart.itemId', 'title price images seller quantity isActive');
+    return res.json(populated.cart || []);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.clearCart = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('cart updatedAt');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    user.cart = [];
+    user.updatedAt = new Date();
+    await user.save();
+    return res.json([]);
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });

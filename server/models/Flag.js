@@ -6,6 +6,7 @@ const FlagSchema = new Schema({
   createdByUserId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   flaggedUserRole: { type: String, enum: ['buyer', 'seller'], required: true },
   orderId: { type: Schema.Types.ObjectId, ref: 'Order', required: true },
+  itemId: { type: Schema.Types.ObjectId, ref: 'Item' },
   reason: { type: String, required: true },
   status: { type: String, enum: ['pending', 'resolved', 'dismissed'], default: 'pending' },
   adminNotes: String,
@@ -16,6 +17,7 @@ const FlagSchema = new Schema({
 FlagSchema.index({ flaggedUserId: 1 });
 FlagSchema.index({ createdByUserId: 1 });
 FlagSchema.index({ orderId: 1 });
+FlagSchema.index({ createdByUserId: 1, itemId: 1, orderId: 1 }, { unique: false });
 FlagSchema.index({ status: 1 });
 
 module.exports = mongoose.model('Flag', FlagSchema);

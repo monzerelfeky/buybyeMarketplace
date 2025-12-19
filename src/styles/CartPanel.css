@@ -20,15 +20,15 @@
   top: 0;
   right: -350px;
   width: 350px;
-  height: 70vh;
-  background: #fff;
-  box-shadow: -3px 0 10px rgba(0, 0, 0, 0.15);
+  height: 75vh;
+  background: #ffffff;
+  box-shadow: -10px 0 30px rgba(15, 23, 42, 0.18);
   transition: 0.3s ease;
   z-index: 999;
   display: flex;
   flex-direction: column;
-  border-top-left-radius: 10px;
-  border-bottom-left-radius: 10px;
+  border-top-left-radius: 16px;
+  border-bottom-left-radius: 16px;
 }
 
 .cart-panel.open {
@@ -37,11 +37,12 @@
 
 /* HEADER */
 .cart-panel-header {
-  padding: 1rem;
+  padding: 1.1rem 1.2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
 }
 
 .cart-close-btn {
@@ -58,7 +59,7 @@
 
 /* CART ITEMS */
 .cart-items-list {
-  padding: 1rem;
+  padding: 1rem 1.2rem;
   overflow-y: auto;
   flex: 1;
 }
@@ -66,20 +67,22 @@
 .cart-panel-item {
   display: flex;
   gap: 0.75rem;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #eee;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .cart-panel-item img {
   width: 70px;
   height: 70px;
-  border-radius: 6px;
+  border-radius: 10px;
   object-fit: cover;
+  background: #f1f5f9;
 }
 
 .cart-item-info h3 {
   font-size: 1rem;
   margin-bottom: 0.25rem;
+  color: #0f172a;
 }
 
 .cart-item-info p {
@@ -89,15 +92,19 @@
 
 .cart-items-total {
   text-align: center;
+  padding: 0.75rem 1rem 0;
+  font-weight: 700;
+  color: #0f172a;
 }
 
 
 /* ACTION BUTTONS */
 .cart-panel-actions {
-  padding: 1rem;
+  padding: 1rem 1.2rem 1.2rem;
   display: flex;
   gap: 0.5rem;
-  border-top: 1px solid #eee;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
 }
 
 .view-cart-btn,
@@ -105,24 +112,25 @@
   flex: 1;
   padding: 0.75rem;
   font-size: 1rem;
-  border-radius: 6px;
+  border-radius: 10px;
   cursor: pointer;
   border: none;
 }
 
 .view-cart-btn {
-  background: #f2f2f2;
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
 .view-cart-btn:hover {
-    background: #c8c8c8;
+  background: #cbd5f5;
 }
 
 .checkout-btn {
-  background: #2563eb;
+  background: #1d4ed8;
   color: white;
 }
 
 .checkout-btn:hover {
-  background: #1d4ed8;
+  background: #1e40af;
 }

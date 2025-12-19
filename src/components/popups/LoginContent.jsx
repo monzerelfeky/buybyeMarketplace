@@ -1,13 +1,21 @@
 // src/components/popups/LoginContent.jsx
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "../../styles/Login.css";
 
+
 export default function LoginContent({ onClose, onLoginSuccess }) {
+  const navigate = useNavigate();
+  const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+  const googleButtonRef = useRef(null);
+
   const [showPassword, setShowPassword] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
+  const [showForgotToast, setShowForgotToast] = useState(false);
+  const [googleReady, setGoogleReady] = useState(false);
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -54,6 +62,99 @@ export default function LoginContent({ onClose, onLoginSuccess }) {
     return valid;
   };
 
+  const handleGoogleCredential = useCallback(async (response) => {
+    if (!response?.credential) {
+      setServerError("Google login failed. Please try again.");
+      return;
+    }
+
+    setIsLoading(true);
+    setServerError("");
+
+    try {
+      const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+      const googleRes = await fetch(`${API_BASE}/api/auth/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential: response.credential }),
+      });
+
+      const googleData = await googleRes.json();
+      if (!googleRes.ok) {
+        setServerError(googleData.message || "Google login failed");
+        return;
+      }
+
+      localStorage.setItem("authToken", googleData.token);
+      localStorage.setItem("user", JSON.stringify(googleData.user));
+      localStorage.setItem("userId", googleData.user?._id || googleData.user?.id || "");
+
+      window.dispatchEvent(new Event("auth-changed"));
+      onLoginSuccess?.();
+      onClose?.();
+    } catch (err) {
+      console.error("Google auth error:", err);
+      setServerError("Network error. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [onClose, onLoginSuccess]);
+
+  const renderGoogleButton = useCallback(() => {
+    if (!googleClientId) return;
+    if (!window.google?.accounts?.id) return;
+    if (!googleButtonRef.current) return;
+
+    googleButtonRef.current.innerHTML = "";
+    const width = googleButtonRef.current.offsetWidth || 360;
+    window.google.accounts.id.renderButton(googleButtonRef.current, {
+      theme: "outline",
+      size: "large",
+      shape: "pill",
+      text: "continue_with",
+      width,
+    });
+  }, [googleClientId]);
+
+  useEffect(() => {
+    if (!googleClientId) return;
+
+    let mounted = true;
+    const initGoogle = () => {
+      if (!window.google?.accounts?.id) return false;
+      window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: handleGoogleCredential,
+        auto_select: true,
+      });
+      if (mounted) setGoogleReady(true);
+      return true;
+    };
+
+    if (!initGoogle()) {
+      const timer = setInterval(() => {
+        if (initGoogle()) clearInterval(timer);
+      }, 200);
+      return () => {
+        mounted = false;
+        clearInterval(timer);
+      };
+    }
+
+    return () => {
+      mounted = false;
+      if (window.google?.accounts?.id?.cancel) {
+        window.google.accounts.id.cancel();
+      }
+    };
+  }, [googleClientId, handleGoogleCredential]);
+
+  useEffect(() => {
+    if (!googleReady) return;
+    const timer = setTimeout(renderGoogleButton, 0);
+    return () => clearTimeout(timer);
+  }, [googleReady, renderGoogleButton]);
+
   const handleSubmit = async () => {
     if (!validate()) return;
 
@@ -71,46 +172,54 @@ export default function LoginContent({ onClose, onLoginSuccess }) {
     setServerError("");
 
     try {
-      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
-      const endpoint = isSignUp ? '/api/auth/register' : '/api/auth/login';
-      const payload = isSignUp 
-        ? { name: formData.name, email: formData.email, password: formData.password, isSeller: false }
-        : { email: formData.email, password: formData.password };
+      const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
-      const res = await fetch(`${API_BASE}${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+      if (isSignUp) {
+        const registerRes = await fetch(`${API_BASE}/api/auth/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            password: formData.password,
+            isSeller: false,
+          }),
+        });
+
+        const registerData = await registerRes.json();
+        if (!registerRes.ok) {
+          setServerError(registerData.message || "Authentication failed");
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      const loginRes = await fetch(`${API_BASE}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setServerError(data.message || 'Authentication failed');
+      const loginData = await loginRes.json();
+      if (!loginRes.ok) {
+        setServerError(loginData.message || "Authentication failed");
         setIsLoading(false);
         return;
       }
 
-      // Store token and user info in localStorage
-      if (data.token) {
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        window.dispatchEvent(new Event('auth-changed'));
-        
-        // Store remember me preference
-        if (rememberMe) {
-          localStorage.setItem('rememberMe', 'true');
-          localStorage.setItem('rememberedEmail', formData.email);
-        }
-      }
+      localStorage.setItem("authToken", loginData.token);
+      localStorage.setItem("user", JSON.stringify(loginData.user));
+      localStorage.setItem("userId", loginData.user._id);
 
-      // Notify host about successful auth (refresh data, rerender)
+      window.dispatchEvent(new Event("auth-changed"));
       onLoginSuccess?.();
-      // Close modal
       onClose?.();
     } catch (err) {
-      console.error('Auth error:', err);
-      setServerError('Network error. Please try again.');
+      console.error("Auth error:", err);
+      setServerError("Network error. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -144,7 +253,36 @@ export default function LoginContent({ onClose, onLoginSuccess }) {
   };
 
   const handleSocialLogin = (provider) => {
-    alert(`${provider} login coming soon!`);
+    if (provider !== "Google") {
+      alert(`${provider} login coming soon!`);
+      return;
+    }
+
+    if (!googleClientId) {
+      setServerError("Google login is not configured.");
+      return;
+    }
+
+    if (!googleReady || !window.google?.accounts?.id) {
+      setServerError("Google login is still loading. Please try again.");
+      return;
+    }
+
+    window.google.accounts.id.prompt((notification) => {
+      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+        setServerError("Google sign-in isn't available. Check browser settings or try another browser.");
+      }
+    });
+  };
+
+  const handleForgotClick = (e) => {
+    e.preventDefault();
+    setShowForgotToast(true);
+    setTimeout(() => {
+      setShowForgotToast(false);
+      onClose?.();
+      navigate("/forgot-password");
+    }, 600);
   };
 
   return (
@@ -273,18 +411,13 @@ export default function LoginContent({ onClose, onLoginSuccess }) {
 
         {!isSignUp && (
           <div className="remember-forgot-row">
-            <label className="checkbox-label">
-              <input 
-                type="checkbox" 
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-              />
-              Remember me
-            </label>
-            <a href="#" className="forgot-link">
+            <button type="button" className="forgot-link" onClick={handleForgotClick}>
               Forgot password?
-            </a>
+            </button>
           </div>
+        )}
+        {showForgotToast && (
+          <div className="forgot-toast">Opening reset page...</div>
         )}
 
         <button className="submit-btn" type="submit" disabled={isLoading}>
@@ -313,42 +446,35 @@ export default function LoginContent({ onClose, onLoginSuccess }) {
       </div>
 
       <div className="social-buttons">
-        <button
-          type="button"
-          className="social-btn"
-          onClick={() => handleSocialLogin("Google")}
-        >
-          <svg className="social-icon" viewBox="0 0 24 24">
-            <path
-              fill="#4285F4"
-              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-            />
-            <path
-              fill="#34A853"
-              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-            />
-            <path
-              fill="#FBBC05"
-              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-            />
-            <path
-              fill="#EA4335"
-              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-            />
-          </svg>
-          Google
-        </button>
-
-        <button
-          type="button"
-          className="social-btn"
-          onClick={() => handleSocialLogin("Facebook")}
-        >
-          <svg className="social-icon" fill="#1877F2" viewBox="0 0 24 24">
-            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-          </svg>
-          Facebook
-        </button>
+        <div className="google-button" ref={googleButtonRef}></div>
+        {!googleReady && (
+          <button
+            type="button"
+            className="social-btn"
+            onClick={() => handleSocialLogin("Google")}
+            style={{ width: "100%" }}
+          >
+            <svg className="social-icon" viewBox="0 0 24 24">
+              <path
+                fill="#4285F4"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+              />
+            </svg>
+            Google
+          </button>
+        )}
       </div>
     </div>
   );

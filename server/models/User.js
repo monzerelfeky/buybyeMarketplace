@@ -45,7 +45,9 @@ const FlagLockSchema = new Schema({
 const UserSchema = new Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  passwordHash: { type: String, required: true },
+  passwordHash: { type: String },
+  authProvider: { type: String, default: 'local' },
+  googleId: String,
   isSeller: { type: Boolean, required: true },
   phone: String,
   addresses: [AddressSchema],
@@ -65,6 +67,8 @@ const UserSchema = new Schema({
   },
   isActive: { type: Boolean, default: true },
   flagLock: FlagLockSchema,
+  resetToken: String,
+  resetTokenExpires: Date,
   createdAt: { type: Date, default: Date.now },
   updatedAt: Date
 });

@@ -120,19 +120,20 @@ export default function WishlistPage() {
   const favoriteListings = listings.filter((item) => favorites[item._id]);
 
   return (
-    <div className="homepage-container">
+    <div className="wishlist-page">
       <Header />
       <div className="header-spacer" />
 
       <section className="wishlist-section">
+
         <div className="wishlist-header-wrapper">
           <div className="wishlist-header">
             <div>
               <h1 className="wishlist-main-title">Your Wishlist</h1>
-              {favoriteListings.length > 0 && (
+              {wishlistItems.length > 0 && (
                 <p className="wishlist-count">
-                  {favoriteListings.length}{" "}
-                  {favoriteListings.length === 1 ? "item" : "items"} saved
+                  {wishlistItems.length}{" "}
+                  {wishlistItems.length === 1 ? "item" : "items"} saved
                 </p>
               )}
             </div>
@@ -145,7 +146,8 @@ export default function WishlistPage() {
           </div>
         </div>
 
-        {favoriteListings.length === 0 ? (
+        {!loading && wishlistItems.length === 0 ? (
+
           <div className="wishlist-empty">
             <div className="wishlist-empty-icon">
               <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -178,14 +180,17 @@ export default function WishlistPage() {
 
                 <div className="listing-body">
                   <h3 className="listing-title">{item.title}</h3>
-                  <p className="listing-price">EGP {item.price}</p>
+                  <p className="listing-price">
+                    EGP {Number(item.price || 0).toLocaleString()}
+                  </p>
                   <div className="listing-meta">
                     <span className="listing-location">Location: {item.location}</span>
                     <span className="listing-time">{item.time}</span>
                   </div>
                 </div>
               </article>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

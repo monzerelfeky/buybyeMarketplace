@@ -239,6 +239,12 @@
   transform: translateY(-2px);
 }
 
+.category-btn.active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+  transform: translateY(-2px);
+}
+
 /* ============================================
    SELLER NAV BAR
 ============================================ */
