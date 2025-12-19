@@ -11,6 +11,7 @@ import "../../styles/Wishlist.css";
 export default function WishlistPage() {
   const [wishlistItems, setWishlistItems] = useState([]);
   const [loading, setLoading] = useState(true);
+
   const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
   const fetchWishlist = async () => {
@@ -49,14 +50,14 @@ export default function WishlistPage() {
     }
   };
 
-  return (
-    <div className="homepage-container">
-      <Header />
 
-      {/* Spacer under fixed header */}
+  return (
+    <div className="wishlist-page">
+      <Header />
       <div className="header-spacer" />
 
       <section className="wishlist-section">
+
         <div className="wishlist-header-wrapper">
           <div className="wishlist-header">
             <div>
@@ -85,6 +86,7 @@ export default function WishlistPage() {
         </div>
 
         {!loading && wishlistItems.length === 0 ? (
+
           <div className="wishlist-empty">
             <div className="wishlist-empty-icon">
               <svg
@@ -102,24 +104,11 @@ export default function WishlistPage() {
             <p className="wishlist-empty-text">
               Start adding items you love to keep track of them easily.
             </p>
-            <Link to="/" className="wishlist-empty-cta">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.35-4.35" />
-              </svg>
-              Browse Products
-            </Link>
           </div>
         ) : (
           <div className="wishlist-grid">
             {wishlistItems.map((item) => (
+
               <article key={item._id} className="listing-card">
                 <div className="listing-image">
                   <div className="image-placeholder">
@@ -171,6 +160,7 @@ export default function WishlistPage() {
                   </div>
                 </div>
               </article>
+
             ))}
           </div>
         )}

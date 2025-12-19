@@ -37,36 +37,6 @@
   font-weight: 500;
 }
 
-.wishlist-back-link {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  background: white;
-  border: 2px solid #e5e7eb;
-  border-radius: 10px;
-  color: #475569;
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 15px;
-  transition: all 0.2s;
-}
-
-.wishlist-back-link:hover {
-  background: #f8fafc;
-  border-color: #2563eb;
-  color: #2563eb;
-  transform: translateX(-2px);
-}
-
-.wishlist-back-link svg {
-  transition: transform 0.2s;
-}
-
-.wishlist-back-link:hover svg {
-  transform: translateX(-3px);
-}
-
 /* ========== EMPTY STATE ========== */
 .wishlist-empty {
   display: flex;
@@ -88,9 +58,8 @@
   margin-bottom: 24px;
 }
 
-/* Empty state heart: soft green */
 .wishlist-empty-icon svg {
-  color: #16a34a;
+  color: #16a34a; /* soft green heart */
 }
 
 .wishlist-empty-title {
@@ -107,28 +76,8 @@
   max-width: 400px;
 }
 
-.wishlist-empty-cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 28px;
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  color: white;
-  text-decoration: none;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 16px;
-  transition: all 0.3s;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
-}
-
-.wishlist-empty-cta:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
-}
-
 /* ========== WISHLIST GRID ========== */
-/* We only control the grid layout here; cards themselves use .listing-card styles */
+/* Grid layout for ProductCard components */
 .wishlist-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -150,11 +99,6 @@
 
   .wishlist-main-title {
     font-size: 26px;
-  }
-
-  .wishlist-back-link {
-    align-self: stretch;
-    justify-content: center;
   }
 
   .wishlist-grid {
