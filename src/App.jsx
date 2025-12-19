@@ -135,7 +135,7 @@ export default function App() {
         <Route path="/order-history" element={<OrderHistoryPage />} />
 
         {/*Report Seller Route*/}
-        <Route path="/report-seller/:sellerId" element={<ReportSeller />} />
+        <Route path="/report-seller" element={<ReportSeller />} />
 
         {/*Order Tracking Route*/}
         <Route path="/order-tracking/:orderId" element={<OrderTrackingPage />} />

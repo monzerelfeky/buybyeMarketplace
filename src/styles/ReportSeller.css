@@ -1,73 +1,149 @@
-.report-seller-container {
-    max-width: 700px;
-    margin: 120px auto;
-    padding: 20px;
-    background: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+.report-page {
+  display: flex;
+  gap: 30px;
+  padding: 40px;
+  min-height: 70vh;
+  background: #f3f4f6;
+  margin-top: 110px;
 }
 
-.report-seller-container h1 {
-    text-align: center;
-    font-size: 28px;
-    margin-bottom: 8px;
+/* LEFT SIDE */
+.report-left {
+  flex: 1;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 25px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
 }
 
-.subtitle {
-    text-align: center;
-    color: #666;
-    margin-bottom: 25px;
-    font-size: 15px;
+.report-left h2 {
+  margin-bottom: 20px;
 }
 
+/* PRODUCTS */
+.products-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.product-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 18px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.1);
+}
+
+/* SELECTED PRODUCT */
+.product-card.selected {
+  border: 2px solid #007bff;
+  background: #e7f1ff;
+  box-shadow: 0 8px 22px rgba(0, 123, 255, 0.3);
+}
+
+/* PRODUCT IMAGE */
+.product-card img {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid #eee;
+}
+
+/* PRODUCT INFO */
+.product-info {
+  flex: 1;
+}
+
+.product-info h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.product-info p {
+  margin-top: 6px;
+  font-size: 14px;
+  color: #666;
+}
+
+.product-price {
+  font-size: 16px;
+  font-weight: bold;
+  color: #111;
+}
+
+/* RIGHT SIDE */
+.report-right {
+  flex: 1;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 25px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.report-right h2 {
+  margin-bottom: 20px;
+}
+
+/* FORM */
 .report-form {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
 }
 
-.report-form label {
-    font-weight: 600;
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.report-form label span {
-    color: red;
+.form-label {
+  font-weight: 600;
 }
 
-.report-form select,
-.report-form textarea,
-.report-form input[type="file"] {
-    width: 95%;
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    font-size: 15px;
+.form-label span {
+  color: red;
 }
 
-.report-form textarea {
-    min-height: 140px;
-    resize: vertical;
+textarea {
+  min-height: 90px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  resize: vertical;
+  font-family: inherit;
 }
 
+/* BUTTON */
 .submit-btn-report {
-    width: 80%;
-    padding: 12px;
-    border: none;
-    border-radius: 10px;
-    background: #007bff;
-    color: #fff;
-    font-size: 17px;
-    cursor: pointer;
-    transition: background 0.3s;
-    display: block;
-    margin: 20px auto;
-    /* centers the button horizontally */
-    text-align: center;
-
-
-
+  padding: 14px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
 }
 
-.submit-btn-report:hover {
-    background: #0056b3;
+.submit-btn-report:disabled {
+  background: #a0c8ff;
+  cursor: not-allowed;
+}
+
+.submit-btn-report:hover:not(:disabled) {
+  background: #0056b3;
+  transform: translateY(-1px);
 }
