@@ -3,27 +3,69 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import "../styles/ReportSeller.css";
 
-export default function ReportSeller() {
-  const [reason, setReason] = useState("");
+export default function ReportSellerPage() {
+  // Mock order data (NO backend)
+  const order = {
+    products: [
+      {
+        _id: "1",
+        name: "Wireless Headphones",
+        price: 59.99,
+        quantity: 1,
+        image: "https://via.placeholder.com/90",
+        seller: "AudioWorld",
+      },
+      {
+        _id: "2",
+        name: "Smart Watch",
+        price: 129.99,
+        quantity: 1,
+        image: "https://via.placeholder.com/90",
+        seller: "TechGear",
+      },
+      {
+        _id: "3",
+        name: "Phone Case",
+        price: 19.99,
+        quantity: 2,
+        image: "https://via.placeholder.com/90",
+        seller: "CaseCorner",
+      },
+    ],
+  };
+
+  const [selectedProducts, setSelectedProducts] = useState([]);
   const [details, setDetails] = useState("");
   const [evidence, setEvidence] = useState(null);
+
+  // Single-select toggle
+  const selectProduct = (id) => {
+    setSelectedProducts([id]);
+  };
+
+  // Get selected product info
+  const selectedProduct = order.products.find((p) =>
+    selectedProducts.includes(p._id)
+  );
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!reason || details.trim() === "") {
-      alert("Please fill all required fields.");
+    if (!selectedProducts.length || !details.trim()) {
+      alert("Please select a product and describe the issue.");
       return;
     }
 
     console.log({
-      reason,
+      product: selectedProduct.name,
+      seller: selectedProduct.seller,
       details,
       evidence,
     });
 
-    alert("Your report has been submitted. Thank you.");
-    setReason("");
+    alert("Report submitted successfully.");
+
+    setSelectedProducts([]);
     setDetails("");
     setEvidence(null);
   };
@@ -32,44 +74,79 @@ export default function ReportSeller() {
     <>
       <Header />
 
-      <div className="report-seller-container">
-        <h1>Report Seller</h1>
-        <p className="subtitle">
-          If you believe this seller violated policies, please submit a report.
-        </p>
+      <div className="report-page">
+        {/* LEFT SIDE – PRODUCTS (single select) */}
+        <div className="report-left">
+          <h2>Select a product</h2>
 
-        <form className="report-form" onSubmit={handleSubmit}>
+          <div className="products-wrapper">
+            {order.products.map((p) => (
+              <div
+                key={p._id}
+                className={`product-card ${
+                  selectedProducts.includes(p._id) ? "selected" : ""
+                }`}
+                onClick={() => selectProduct(p._id)}
+              >
+                <img src={p.image} alt={p.name} />
 
-          {/* Reason */}
-          <label>Reason for Report <span>*</span></label>
-          <select value={reason} onChange={(e) => setReason(e.target.value)}>
-            <option value="">-- Select a reason --</option>
-            <option value="fake_products">Selling fake products</option>
-            <option value="abusive_behavior">Abusive behavior</option>
-            <option value="spam">Spam or misleading info</option>
-            <option value="fraud">Fraud / Scam attempt</option>
-            <option value="other">Other</option>
-          </select>
+                <div className="product-info">
+                  <h4>{p.name}</h4>
+                  <p>Quantity: {p.quantity}</p>
+                  <p style={{ fontStyle: "italic", fontSize: "13px", color: "#555" }}>
+                    Seller: {p.seller}
+                  </p>
+                </div>
 
-          {/* Details */}
-          <label>Explain the issue <span>*</span></label>
-          <textarea
-            placeholder="Describe the problem in detail..."
-            value={details}
-            onChange={(e) => setDetails(e.target.value)}
-          />
+                <div className="product-price">${p.price}</div>
+              </div>
+            ))}
+          </div>
+        </div>
 
-          {/* Evidence */}
-          <label>Upload evidence (optional)</label>
-          <input
-            type="file"
-            onChange={(e) => setEvidence(e.target.files[0])}
-          />
+        {/* RIGHT SIDE – REPORT FORM */}
+        <div className="report-right">
+          <h2>Report Seller</h2>
 
-          <button type="submit" className="submit-btn-report">
-            Submit Report
-          </button>
-        </form>
+          {selectedProduct ? (
+            <form className="report-form" onSubmit={handleSubmit} autoComplete="off">
+              <p>
+                <strong>Seller:</strong> {selectedProduct.seller}
+              </p>
+
+              <div className="form-group">
+                <label className="form-label">
+                  Describe the issue <span>*</span>
+                </label>
+                <textarea
+                  placeholder="Explain the problem you faced with the selected product..."
+                  value={details}
+                  onChange={(e) => setDetails(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Upload evidence (optional)</label>
+                <input
+                  type="file"
+                  onChange={(e) => setEvidence(e.target.files[0])}
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="submit-btn-report"
+                disabled={!selectedProducts.length}
+              >
+               flag seller
+              </button>
+            </form>
+          ) : (
+            <p style={{ color: "#777", fontStyle: "italic" }}>
+              Select a product from the left to report an issue.
+            </p>
+          )}
+        </div>
       </div>
 
       <Footer />
