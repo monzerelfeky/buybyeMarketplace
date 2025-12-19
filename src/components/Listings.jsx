@@ -1,42 +1,93 @@
 // components/Listings.jsx
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { getWishlist, addToWishlist, removeFromWishlist } from "../utils/wishlist";
 import "../styles/Listings.css";
 
-export default function Listings({
-  favorites = {},                 // ✅ default to empty object
-  toggleFavorite = () => {},      // ✅ default to no-op function
-}) {
-  // Your mock listing data
-  const listings = [
+export default function Listings({ items = [] }) {
+  const [wishlistIds, setWishlistIds] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Your mock listing data (fallback)
+  const mockListings = [
     {
-      id: 1,
+      _id: "1",
       title: "iPhone 15 Pro Max 256GB",
-      price: "48,500",
-      location: "Nasr City",
-      time: "2 hours ago",
+      price: 48500,
+      category: "Electronics",
+      deliveryEstimate: "2 hours ago",
     },
     {
-      id: 2,
+      _id: "2",
       title: "Toyota Corolla 2023",
-      price: "985,000",
-      location: "Maadi",
-      time: "5 hours ago",
+      price: 985000,
+      category: "Cars",
+      deliveryEstimate: "5 hours ago",
     },
     {
-      id: 3,
+      _id: "3",
       title: "Studio Apartment – New Cairo",
-      price: "12,000/mo",
-      location: "5th Settlement",
-      time: "1 day ago",
+      price: 12000,
+      category: "Real Estate",
+      deliveryEstimate: "1 day ago",
     },
     {
-      id: 4,
+      _id: "4",
       title: "MacBook Air M2 2023",
-      price: "62,900",
-      location: "Heliopolis",
-      time: "3 hours ago",
+      price: 62900,
+      category: "Electronics",
+      deliveryEstimate: "3 hours ago",
     },
   ];
+
+  // Use real items if provided, otherwise use mock data
+  const displayItems = items.length > 0 ? items : mockListings;
+
+  // Fetch wishlist on mount
+  useEffect(() => {
+    async function fetchWishlist() {
+      try {
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+          setLoading(false);
+          return;
+        }
+
+        const data = await getWishlist();
+        setWishlistIds(data.map(item => item._id));
+      } catch (err) {
+        console.error("Failed to fetch wishlist:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchWishlist();
+  }, []);
+
+  const handleToggleWishlist = async (itemId, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      alert("Please login to use wishlist");
+      return;
+    }
+
+    try {
+      if (wishlistIds.includes(itemId)) {
+        await removeFromWishlist(itemId);
+        setWishlistIds(wishlistIds.filter(id => id !== itemId));
+      } else {
+        await addToWishlist(itemId);
+        setWishlistIds([...wishlistIds, itemId]);
+      }
+    } catch (err) {
+      console.error("Wishlist error:", err);
+      alert("Failed to update wishlist. Please try again.");
+    }
+  };
+
+  const isInWishlist = (itemId) => wishlistIds.includes(itemId);
 
   return (
     <section className="listings-section">
@@ -45,22 +96,28 @@ export default function Listings({
       </div>
 
       <div className="listings-grid">
-        {listings.map((item) => (
-          <article key={item.id} className="listing-card">
+        {displayItems.map((item) => (
+          <article key={item._id} className="listing-card">
             <div className="listing-image">
-              <div className="image-placeholder" />
+              <div className="image-placeholder">
+                {item.images?.[0] ? (
+                  <img 
+                    src={`http://localhost:5000${item.images[0]}`} 
+                    alt={item.title}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : null}
+              </div>
 
               {/* Favorite Button */}
               <button
                 className={`favorite-heart-btn ${
-                  favorites[item.id] ? "favorited" : ""
+                  isInWishlist(item._id) ? "favorited" : ""
                 }`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleFavorite(item.id);
-                }}
+                onClick={(e) => handleToggleWishlist(item._id, e)}
+                disabled={loading}
                 aria-label={
-                  favorites[item.id]
+                  isInWishlist(item._id)
                     ? "Remove from favorites"
                     : "Add to favorites"
                 }
@@ -85,12 +142,14 @@ export default function Listings({
 
             <div className="listing-body">
               <h3 className="listing-title">{item.title}</h3>
-              <p className="listing-price">EGP {item.price}</p>
+              <p className="listing-price">EGP {item.price.toLocaleString()}</p>
               <div className="listing-meta">
                 <span className="listing-location">
-                  Location: {item.location}
+                  {item.category || "Category"}
                 </span>
-                <span className="listing-time">{item.time}</span>
+                <span className="listing-time">
+                  {item.deliveryEstimate || "Available"}
+                </span>
               </div>
             </div>
           </article>
