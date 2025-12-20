@@ -234,10 +234,10 @@ exports.updateOrderStatus = async (req, res) => {
         User.findById(order.buyerId).select('email name'),
         User.findById(order.sellerId).select('email name'),
       ]);
-      const recipients = [buyer?.email, seller?.email].filter(Boolean);
-      if (recipients.length > 0) {
-        const subject = `Order ${order.orderNo || order._id} status: ${status}`;
-        const text = `Order ${order.orderNo || order._id} status changed to ${status}.${
+      const orderRef = order.orderNo || order._id;
+      if (buyer?.email) {
+        const subject = `Order ${orderRef} status: ${status}`;
+        const text = `Order ${orderRef} status changed to ${status}.${
           note ? `\n\nNote: ${note}` : ''
         }`;
         const html = `
@@ -245,16 +245,30 @@ exports.updateOrderStatus = async (req, res) => {
             <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 24px; border: 1px solid #e5e7eb;">
               <h2 style="margin: 0 0 12px; font-size: 18px;">Order status update</h2>
               <p style="margin: 0 0 10px; font-size: 14px; color: #374151;">
-                Order <strong>${order.orderNo || order._id}</strong> is now
+                Order <strong>${orderRef}</strong> is now
                 <strong>${status}</strong>.
               </p>
               ${note ? `<p style="margin: 0; font-size: 13px; color: #6b7280;">Note: ${note}</p>` : ''}
             </div>
           </div>
         `;
-        await Promise.all(
-          recipients.map((to) => sendEmail({ to, subject, text, html }))
-        );
+        await sendEmail({ to: buyer.email, subject, text, html });
+      }
+
+      if (status === 'Cancelled' && seller?.email) {
+        const subject = `Order ${orderRef} cancelled by buyer`;
+        const text = `Order ${orderRef} was cancelled by the buyer.`;
+        const html = `
+          <div style="font-family: Arial, sans-serif; color: #111827; background: #f9fafb; padding: 24px;">
+            <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 24px; border: 1px solid #e5e7eb;">
+              <h2 style="margin: 0 0 12px; font-size: 18px;">Order cancelled</h2>
+              <p style="margin: 0 0 10px; font-size: 14px; color: #374151;">
+                Order <strong>${orderRef}</strong> was cancelled by the buyer.
+              </p>
+            </div>
+          </div>
+        `;
+        await sendEmail({ to: seller.email, subject, text, html });
       }
     } catch (err) {
       console.error('Order status email failed:', err.message);
