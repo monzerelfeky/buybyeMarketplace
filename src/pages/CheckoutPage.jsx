@@ -136,14 +136,17 @@ export default function CheckoutPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      navigate("/order-confirmation", {
-        state: {
-          orders,
-          shipping,
-          paymentMethod,
-          total: totalPrice,
-        },
-      });
+      const confirmationPayload = {
+        orders,
+        shipping,
+        paymentMethod,
+        total: totalPrice,
+      };
+      sessionStorage.setItem(
+        "lastOrderConfirmation",
+        JSON.stringify(confirmationPayload)
+      );
+      navigate("/order-confirmation", { state: confirmationPayload });
     } catch (err) {
       console.error("Order error:", err);
       setOrderError("Failed to place order. Please try again.");
