@@ -14,11 +14,7 @@ const {
   updatePaymentMethod,
   deletePaymentMethod,
   setDefaultPaymentMethod,
-  getCart,
-  addToCart,
-  updateCartItem,
-  removeCartItem,
-  clearCart,
+  getUserById
 } = require('../controllers/userController');
 
 const router = express.Router();
@@ -39,10 +35,6 @@ router.put('/me/payment-methods/:index', protect, updatePaymentMethod);
 router.delete('/me/payment-methods/:index', protect, deletePaymentMethod);
 router.patch('/me/payment-methods/:index/default', protect, setDefaultPaymentMethod);
 
-router.get('/me/cart', protect, getCart);
-router.post('/me/cart', protect, addToCart);
-router.patch('/me/cart/:itemId', protect, updateCartItem);
-router.delete('/me/cart/:itemId', protect, removeCartItem);
-router.delete('/me/cart', protect, clearCart);
+router.get('/:id', getUserById);
 
 module.exports = router;

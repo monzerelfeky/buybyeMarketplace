@@ -317,7 +317,7 @@
 }
 
 .AI-container button:hover {
-  background: #0056b3;
+  background: #007bff;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
 }
