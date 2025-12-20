@@ -64,6 +64,16 @@
     font-size: 15px;
 }
 
+.checkout-input.input-error {
+    border-color: #dc2626;
+}
+
+.error-text {
+    color: #dc2626;
+    font-size: 13px;
+    margin-top: 4px;
+}
+
 /* Only target the city dropdown */
 .input-group.city select {
     appearance: none;
@@ -92,6 +102,46 @@
     padding: 5px 0;
     font-size: 15px;
     cursor: pointer;
+}
+
+/* --- Card Payment Form --- */
+.card-payment-form {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.card-row {
+    display: flex;
+    gap: 12px;
+}
+
+.card-row .input-group {
+    flex: 1;
+}
+
+.card-input-wrapper {
+    position: relative;
+}
+
+.card-number-input {
+    padding-right: 56px;
+}
+
+.card-logo {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: auto;
+}
+
+@media (max-width: 600px) {
+    .card-row {
+        flex-direction: column;
+    }
 }
 
 /* --- Order Summary Items --- */
