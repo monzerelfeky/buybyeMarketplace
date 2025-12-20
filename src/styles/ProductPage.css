@@ -374,6 +374,7 @@
   margin-top: 2rem;
   display: flex;
   flex-direction: column;
+<<<<<<< Updated upstream
   gap: 0.75rem;
 }
 
@@ -400,6 +401,38 @@
   padding: 0.9rem 1.8rem;
 }
 
+=======
+  gap: 0.85rem;
+}
+
+.ai-summary-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #1a1a1a;
+}
+
+.ai-summary-card {
+  padding: 1.5rem;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 2px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.9rem;
+  min-height: 72px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.ai-summary-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+>>>>>>> Stashed changes
 .ai-summary-button:disabled {
   opacity: 0.6;
 }
@@ -412,6 +445,19 @@
 .ai-summary-error {
   font-size: 0.95rem;
   color: #b91c1c;
+<<<<<<< Updated upstream
+=======
+  font-weight: 600;
+}
+
+.ai-summary-result {
+  width: 100%;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  border: none;
+  box-shadow: none;
+>>>>>>> Stashed changes
 }
 
 .ai-summary-result p {
@@ -429,8 +475,12 @@
   gap: 1rem;
   font-size: 0.9rem;
   font-weight: 600;
+<<<<<<< Updated upstream
   cursor: pointer;
   transition: all 0.2s ease;
+=======
+  color: #1a1a1a;
+>>>>>>> Stashed changes
   white-space: nowrap;
   flex-shrink: 0;
 }

@@ -2,12 +2,14 @@ import React, { useEffect, useMemo, useState } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useNavigate } from "react-router-dom";
+import CardPaymentForm from "../components/Checkout/CardPaymentForm";
 import "../styles/CheckoutPage.css";
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [orderError, setOrderError] = useState("");
   const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
@@ -79,17 +81,20 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     if (!validateFields()) return;
     setOrderError("");
+    setIsPlacingOrder(true);
 
     const token = localStorage.getItem("authToken");
     const storedUser = localStorage.getItem("user");
     const user = storedUser ? JSON.parse(storedUser) : null;
     if (!token || !user?.id) {
       setOrderError("Please login to place an order.");
+      setIsPlacingOrder(false);
       return;
     }
 
     if (cartItems.length === 0) {
       setOrderError("Your cart is empty.");
+      setIsPlacingOrder(false);
       return;
     }
 
@@ -147,6 +152,8 @@ export default function CheckoutPage() {
     } catch (err) {
       console.error("Order error:", err);
       setOrderError("Failed to place order. Please try again.");
+    } finally {
+      setIsPlacingOrder(false);
     }
   };
 
@@ -254,6 +261,10 @@ export default function CheckoutPage() {
                 />
                 Credit / Debit Card
               </label>
+
+              {paymentMethod === "card" && (
+                <CardPaymentForm onPay={handlePlaceOrder} isSubmitting={isPlacingOrder} />
+              )}
             </div>
           </div>
 
@@ -276,13 +287,15 @@ export default function CheckoutPage() {
 
               {orderError ? <p className="form-error">{orderError}</p> : null}
 
-              <button
-                className="place-order-btn"
-                onClick={handlePlaceOrder}
-                disabled={loading || cartItems.length === 0}
-              >
-                Place Order
-              </button>
+              {paymentMethod === "cash" && (
+                <button
+                  className="place-order-btn"
+                  onClick={handlePlaceOrder}
+                  disabled={loading || cartItems.length === 0 || isPlacingOrder}
+                >
+                  {isPlacingOrder ? "Placing Order..." : "Place Order"}
+                </button>
+              )}
             </div>
           </div>
 
