@@ -33,7 +33,7 @@
     const isLoggedIn = !!localStorage.getItem('authToken');
     const isSeller = !!currentUser?.isSeller;
 
-    const categories = ["Cars", "Sports & fitness", "Electronics", "Home & Garden"];
+    const categories = ["Cars", "Sports & Fitness", "Electronics", "Home & Garden"];
 
     // IMPORTANT FIX → Profile stays buyer unless it's under /seller
     // Detect if coming from seller

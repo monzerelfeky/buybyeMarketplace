@@ -184,7 +184,7 @@ export default function SellerItems() {
             <option>Electronics</option>
             <option>Home & Garden</option>
             <option>Fashion</option>
-            <option>Sports</option>
+            <option>Sports & Fitness</option>
             <option>Vehicles</option>
             <option>Other</option>
           </select>

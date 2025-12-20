@@ -49,7 +49,18 @@ exports.listItems = async (req, res) => {
       filter.seller = sellerId || seller;
     }
     if (category) {
-      filter.category = category;
+      const normalized = category.toLowerCase().replace(/\s+/g, " ").trim();
+      if (
+        normalized === "sports & fitness" ||
+        normalized === "sports&fitness" ||
+        normalized === "sports fitness"
+      ) {
+        filter.category = {
+          $in: [/^sports\s*&\s*fitness$/i, /^sports$/i],
+        };
+      } else {
+        filter.category = new RegExp(`^${escapeRegex(category)}$`, "i");
+      }
     }
 
     if (query) {
