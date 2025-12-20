@@ -4,66 +4,151 @@ import "../../styles/seller/editItem.css";
 
 export default function EditItemContent({ item, onClose, onSave }) {
   const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
-  const [title, setTitle] = useState(item.title);
-  const [price, setPrice] = useState(item.price !== undefined && item.price !== null ? String(item.price) : '');
+
+  // ✅ Upload multiple files -> returns [{url, publicId, ...}]
+  const uploadImagesToCloudinary = async (files) => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append("images", file));
+
+    const res = await fetch(`${API_BASE}/api/upload/listing-images`, {
+      method: "POST",
+      body: formData,
+      // do NOT set Content-Type manually
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      const msg = data?.message || "Image upload failed";
+      throw new Error(msg);
+    }
+
+    // Expect: { images: [{ url, publicId, ... }] }
+    return Array.isArray(data?.images) ? data.images : [];
+  };
+
+  const normalizeInitialImages = (imgs = []) =>
+    (imgs || [])
+      .map((img, idx) => {
+        // DB might return either string URLs or {url, publicId}
+        const url = typeof img === "string" ? img : img?.url || "";
+        if (!url) return null;
+
+        return {
+          id: img?.publicId || img?.id || `existing-${idx}`,
+          url,
+          publicId: typeof img === "object" ? img?.publicId : undefined,
+          preview: url,
+          uploading: false,
+        };
+      })
+      .filter(Boolean);
+
+  const [title, setTitle] = useState(item.title || "");
+  const [price, setPrice] = useState(
+    item.price !== undefined && item.price !== null ? String(item.price) : ""
+  );
   const [quantity, setQuantity] = useState(
     item.quantity !== undefined && item.quantity !== null ? String(item.quantity) : ""
   );
-  const [description, setDescription] = useState(item.description);
+  const [description, setDescription] = useState(item.description || "");
   const [category, setCategory] = useState(item.category || "Electronics");
-  const [images, setImages] = useState(item.images || []);
+  const [images, setImages] = useState(() => normalizeInitialImages(item.images));
   const [isSaving, setIsSaving] = useState(false);
-
-  // Helper: file → base64
-  const fileToBase64 = (file) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
 
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
     const remainingSlots = 10 - images.length;
-    const toRead = files.slice(0, remainingSlots);
+    const toUpload = files.slice(0, remainingSlots);
 
-    const base64s = await Promise.all(
-      toRead.map((file) => fileToBase64(file))
-    );
-
-    const newImages = base64s.map((base64) => ({
-      id: Math.random().toString(36).slice(2),
-      base64,
+    // Temp previews while uploading
+    const temp = toUpload.map((file) => ({
+      id: `temp-${Math.random().toString(36).slice(2)}`,
+      url: "",
+      publicId: undefined,
+      preview: URL.createObjectURL(file),
+      uploading: true,
     }));
 
-    setImages((prev) => [...prev, ...newImages]);
+    setImages((prev) => [...prev, ...temp]);
+
+    try {
+      const uploaded = await uploadImagesToCloudinary(toUpload); // [{url, publicId, ...}]
+
+      setImages((prev) => {
+        const copy = [...prev];
+
+        // remove temp items and cleanup blob URLs
+        for (const t of temp) {
+          const idx = copy.findIndex((x) => x.id === t.id);
+          if (idx !== -1) {
+            try {
+              if (copy[idx]?.preview?.startsWith("blob:")) {
+                URL.revokeObjectURL(copy[idx].preview);
+              }
+            } catch (_) {}
+            copy.splice(idx, 1);
+          }
+        }
+
+        // add uploaded cloudinary images
+        const normalizedUploaded = (uploaded || [])
+          .map((u, i) => {
+            const url = u?.url;
+            if (!url) return null;
+            return {
+              id: u?.publicId || `cloud-${Date.now()}-${i}`,
+              url,
+              publicId: u?.publicId,
+              preview: url,
+              uploading: false,
+            };
+          })
+          .filter(Boolean);
+
+        return [...copy, ...normalizedUploaded].slice(0, 10);
+      });
+    } catch (err) {
+      console.error(err);
+      // Remove temp uploading entries on failure
+      setImages((prev) => prev.filter((img) => !img.uploading));
+      alert(err?.message || "Image upload failed.");
+    } finally {
+      // allow selecting same file again
+      e.target.value = "";
+    }
   };
 
   const handleRemoveImage = (id) => {
-    setImages((prev) =>
-      prev.filter((img) => (typeof img === "string" ? img !== id : img.id !== id))
-    );
+    setImages((prev) => {
+      const removed = prev.find((x) => x.id === id);
+      if (removed?.preview?.startsWith("blob:")) {
+        try {
+          URL.revokeObjectURL(removed.preview);
+        } catch (_) {}
+      }
+      return prev.filter((img) => img.id !== id);
+    });
   };
 
   const handleSave = () => {
     setIsSaving(true);
 
-    // Combine existing images with new uploaded images
-    // All images will be sent to backend for persistence
-    const newImageObjects = images.filter(img => typeof img === 'object' && img.base64);
-    const existingImageStrings = images.filter(img => typeof img === 'string');
-    
-    // Convert new image objects to base64 strings
-    const newImageStrings = newImageObjects.map(img => img.base64);
-    
-    // All images as strings to send to backend
-    const allImages = [...existingImageStrings, ...newImageStrings];
+    // ✅ Send as Cloudinary objects [{url, publicId}]
+    // This matches your backend `isCloudinaryImages` check (objects with url). :contentReference[oaicite:1]{index=1}
+    const cloudinaryImages = images
+      .filter((img) => !img.uploading)
+      .map((img) => ({
+        url: img.url,
+        ...(img.publicId ? { publicId: img.publicId } : {}),
+      }))
+      .filter((x) => !!x.url);
 
-    // Normalize and round price to two decimals to avoid floating-point drift
-    const normalizedPrice = Number.isFinite(Number(price)) ? Math.round(Number(price) * 100) / 100 : 0;
+    const normalizedPrice = Number.isFinite(Number(price))
+      ? Math.round(Number(price) * 100) / 100
+      : 0;
 
     const updatedItem = {
       ...item,
@@ -72,13 +157,13 @@ export default function EditItemContent({ item, onClose, onSave }) {
       quantity: Number.isFinite(Number(quantity)) ? Number(quantity) : 0,
       description: description.trim(),
       category,
-      images: allImages,  // Send all images (existing + new) to backend
+      images: cloudinaryImages, // ✅ objects only
     };
 
     setTimeout(() => {
       onSave?.(updatedItem);
       setIsSaving(false);
-    }, 400);
+    }, 250);
   };
 
   return (
@@ -94,7 +179,6 @@ export default function EditItemContent({ item, onClose, onSave }) {
           handleSave();
         }}
       >
-        {/* Title */}
         <div className="ei-field">
           <label className="ei-label">Title</label>
           <input
@@ -102,12 +186,10 @@ export default function EditItemContent({ item, onClose, onSave }) {
             className="ei-input"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. iPhone 15 Pro Max 256GB"
             required
           />
         </div>
 
-        {/* Price */}
         <div className="ei-field">
           <label className="ei-label">Price ($)</label>
           <input
@@ -117,12 +199,10 @@ export default function EditItemContent({ item, onClose, onSave }) {
             className="ei-input"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
-            placeholder="299.99"
             required
           />
         </div>
 
-        {/* Quantity */}
         <div className="ei-field">
           <label className="ei-label">Quantity</label>
           <input
@@ -132,12 +212,10 @@ export default function EditItemContent({ item, onClose, onSave }) {
             className="ei-input"
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
-            placeholder="0"
             required
           />
         </div>
 
-        {/* Category */}
         <div className="ei-field">
           <label className="ei-label">Category</label>
           <select
@@ -154,7 +232,6 @@ export default function EditItemContent({ item, onClose, onSave }) {
           </select>
         </div>
 
-        {/* Description */}
         <div className="ei-field">
           <label className="ei-label">Description</label>
           <textarea
@@ -162,12 +239,10 @@ export default function EditItemContent({ item, onClose, onSave }) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={6}
-            placeholder="Include condition, specs, accessories, warranty info..."
             required
           />
         </div>
 
-        {/* Images edit */}
         <div className="ei-field">
           <label className="ei-label">Images</label>
 
@@ -189,34 +264,24 @@ export default function EditItemContent({ item, onClose, onSave }) {
 
           {images.length > 0 && (
             <div className="ei-preview-grid">
-              {images.map((img) => {
-                const src = typeof img === "string"
-                  ? (img.startsWith("http://") || img.startsWith("https://") || img.startsWith("data:"))
-                    ? img
-                    : img.startsWith("/")
-                      ? `${API_BASE}${img}`
-                      : `${API_BASE}/uploads/images/${img}`
-                  : img.base64;
-                const key = typeof img === "string" ? img : img.id;
-                const removeId = typeof img === "string" ? img : img.id;
-                return (
-                  <div key={key} className="ei-preview-img">
-                    <img src={src} alt="preview" />
-                    <button
-                      type="button"
-                      className="ei-remove-img"
-                      onClick={() => handleRemoveImage(removeId)}
-                    >
-                      X
-                    </button>
-                  </div>
-                );
-              })}
+              {images.map((img) => (
+                <div key={img.id || img.url} className="ei-preview-img">
+                  <img src={img.preview || img.url} alt="preview" />
+                  <button
+                    type="button"
+                    className="ei-remove-img"
+                    onClick={() => handleRemoveImage(img.id)}
+                    disabled={img.uploading}
+                    title={img.uploading ? "Uploading..." : "Remove"}
+                  >
+                    ✖
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </div>
 
-        {/* Action Buttons */}
         <div className="ei-actions">
           <button
             type="button"
@@ -226,10 +291,12 @@ export default function EditItemContent({ item, onClose, onSave }) {
           >
             Cancel
           </button>
+
           <button
             type="submit"
             className="ei-btn primary"
-            disabled={isSaving}
+            disabled={isSaving || images.some((x) => x.uploading)}
+            title={images.some((x) => x.uploading) ? "Wait for uploads to finish" : "Save"}
           >
             {isSaving ? "Saving..." : "Save Changes"}
           </button>
