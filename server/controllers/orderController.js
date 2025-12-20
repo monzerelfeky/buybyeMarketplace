@@ -46,6 +46,22 @@ exports.getOrder = async (req, res) => {
 exports.createOrder = async (req, res) => {
   try {
     const { buyerId, sellerId, items = [], deliveryAddress, buyerNotes } = req.body;
+    const deliveryCity = deliveryAddress?.city;
+    if (!deliveryCity || !String(deliveryCity).trim()) {
+      return res.status(400).json({ message: 'Delivery city is required' });
+    }
+
+    const seller = await User.findById(sellerId).select('serviceAreas');
+    if (!seller) return res.status(404).json({ message: 'Seller not found' });
+    if (Array.isArray(seller.serviceAreas) && seller.serviceAreas.length > 0) {
+      const normalizedCity = String(deliveryCity).trim().toLowerCase();
+      const isCovered = seller.serviceAreas.some(
+        (area) => String(area.city || '').trim().toLowerCase() === normalizedCity
+      );
+      if (!isCovered) {
+        return res.status(400).json({ message: 'Delivery not available for selected city' });
+      }
+    }
 
     const itemsSnapshot = await buildItemSnapshots(items);
     const totalPrice = computeTotal(itemsSnapshot);

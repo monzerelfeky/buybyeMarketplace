@@ -30,6 +30,14 @@ export default function CheckoutPage() {
 
   const [errors, setErrors] = useState({});
   const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [serviceabilityStatus, setServiceabilityStatus] = useState({
+    state: "idle",
+    blocked: [],
+    details: [],
+    feeTotal: 0,
+  });
+
+  const normalizeCity = (value) => String(value || "").trim().toLowerCase();
 
   const validateFields = () => {
     const newErrors = {};
@@ -69,6 +77,63 @@ export default function CheckoutPage() {
     fetchCart();
   }, [API_BASE]);
 
+  useEffect(() => {
+    const city = normalizeCity(shipping.city);
+    const sellerIds = Array.from(
+      new Set(cartItems.map((entry) => entry.itemId?.seller).filter(Boolean))
+    );
+
+    if (!city || sellerIds.length === 0) {
+      setServiceabilityStatus({ state: "idle", blocked: [], details: [], feeTotal: 0 });
+      return;
+    }
+
+    let cancelled = false;
+    setServiceabilityStatus((prev) => ({ ...prev, state: "checking" }));
+
+    const fetchServiceability = async () => {
+      try {
+        const results = await Promise.all(
+          sellerIds.map(async (sellerId) => {
+            const res = await fetch(`${API_BASE}/api/sellers/${sellerId}/service-areas`);
+            if (!res.ok) {
+              return { sellerId, allowed: false, reason: "Seller not found" };
+            }
+            const areas = await res.json();
+            if (!Array.isArray(areas) || areas.length === 0) {
+              return { sellerId, allowed: true, reason: "No service area limits", fee: 0 };
+            }
+            const match = areas.find((area) => normalizeCity(area.city) === city);
+            return {
+              sellerId,
+              allowed: Boolean(match),
+              reason: match ? "Covered" : "City not covered",
+              fee: match ? Number(match.deliveryFee || 0) : 0,
+            };
+          })
+        );
+
+        if (cancelled) return;
+        const blocked = results.filter((r) => !r.allowed).map((r) => r.sellerId);
+        const feeTotal = results.reduce((sum, r) => sum + (Number(r.fee) || 0), 0);
+        setServiceabilityStatus({
+          state: blocked.length ? "blocked" : "ok",
+          blocked,
+          details: results,
+          feeTotal,
+        });
+      } catch (err) {
+        if (cancelled) return;
+        setServiceabilityStatus({ state: "blocked", blocked: sellerIds, details: [], feeTotal: 0 });
+      }
+    };
+
+    fetchServiceability();
+    return () => {
+      cancelled = true;
+    };
+  }, [API_BASE, cartItems, shipping.city]);
+
   const totalPrice = useMemo(
     () =>
       cartItems.reduce(
@@ -77,6 +142,8 @@ export default function CheckoutPage() {
       ),
     [cartItems]
   );
+  const deliveryFeeTotal = serviceabilityStatus.feeTotal || 0;
+  const grandTotal = totalPrice + deliveryFeeTotal;
 
   const handlePlaceOrder = async () => {
     if (!validateFields()) return;
@@ -145,7 +212,8 @@ export default function CheckoutPage() {
         orders,
         shipping,
         paymentMethod,
-        total: totalPrice,
+        deliveryFee: serviceabilityStatus.feeTotal,
+        total: totalPrice + serviceabilityStatus.feeTotal,
       };
       sessionStorage.setItem(
         "lastOrderConfirmation",
@@ -266,7 +334,39 @@ export default function CheckoutPage() {
               </label>
 
               {paymentMethod === "card" && (
-                <CardPaymentForm onPay={handlePlaceOrder} isSubmitting={isPlacingOrder} />
+                <CardPaymentForm
+                  onPay={handlePlaceOrder}
+                  isSubmitting={isPlacingOrder}
+                  disabledReason={
+                    serviceabilityStatus.state === "blocked"
+                      ? "Delivery is not available for the selected city."
+                      : ""
+                  }
+                />
+              )}
+
+              {serviceabilityStatus.state !== "idle" && (
+                <div className="serviceability-status">
+                  <p className="serviceability-title">Delivery availability</p>
+                  {serviceabilityStatus.state === "checking" && (
+                    <p className="serviceability-note">Checking coverage...</p>
+                  )}
+                  {serviceabilityStatus.state === "ok" && (
+                    <p className="serviceability-ok">Delivery available for the selected city.</p>
+                  )}
+                  {serviceabilityStatus.state === "blocked" && (
+                    <div className="serviceability-blocked">
+                      <p>Delivery not available for one or more sellers.</p>
+                      <ul>
+                        {serviceabilityStatus.details.map((detail) => (
+                          <li key={detail.sellerId}>
+                            Seller {detail.sellerId.slice(-6)}: {detail.reason}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -281,11 +381,16 @@ export default function CheckoutPage() {
                 <span>{cartItems.length}</span>
               </div>
 
+              <div className="summary-item">
+                <span>Delivery fee</span>
+                <span>EGP {Number(deliveryFeeTotal || 0).toLocaleString()}</span>
+              </div>
+
               <hr />
 
               <div className="summary-total">
                 <strong>Total</strong>
-                <strong>EGP {Number(totalPrice || 0).toLocaleString()}</strong>
+                <strong>EGP {Number(grandTotal || 0).toLocaleString()}</strong>
               </div>
 
               {orderError ? <p className="form-error">{orderError}</p> : null}
@@ -294,7 +399,12 @@ export default function CheckoutPage() {
                 <button
                   className="place-order-btn"
                   onClick={handlePlaceOrder}
-                  disabled={loading || cartItems.length === 0 || isPlacingOrder}
+                  disabled={
+                    loading ||
+                    cartItems.length === 0 ||
+                    isPlacingOrder ||
+                    serviceabilityStatus.state === "blocked"
+                  }
                 >
                   {isPlacingOrder ? "Placing Order..." : "Place Order"}
                 </button>
