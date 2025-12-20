@@ -279,6 +279,12 @@
   width: 100%;
 }
 
+.google-button {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
 .social-btn {
   width: 100%;
   padding: 0.7rem;

@@ -38,6 +38,21 @@ exports.createFlag = async (req, res) => {
       await deriveIdsFromOrder(payload.orderId, payload);
     }
 
+    if (payload.orderId && !payload.itemId) {
+      return res.status(400).json({ message: 'itemId is required for order flags' });
+    }
+
+    if (payload.orderId && payload.itemId && payload.createdByUserId) {
+      const existing = await Flag.findOne({
+        orderId: payload.orderId,
+        itemId: payload.itemId,
+        createdByUserId: payload.createdByUserId,
+      }).select('_id');
+      if (existing) {
+        return res.status(409).json({ message: 'This product in this order has already been flagged.' });
+      }
+    }
+
     payload.updatedAt = new Date();
 
     const f = new Flag(payload);

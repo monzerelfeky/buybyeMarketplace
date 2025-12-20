@@ -9,6 +9,7 @@ export default function SidePanel({
   onCreateItem,
   onBecomeSeller,
   isLoggedIn = false,
+  isSeller = false,
 }) {
   const categoryList = [
     "Electronics",
@@ -215,15 +216,29 @@ export default function SidePanel({
               )}
 
               {/* Guest + Logged-in can see */}
-              <button
-                className="side-panel-link"
-                onClick={() => {
-                  if (onBecomeSeller) onBecomeSeller();
-                  onClose();
-                }}
-              >
-                Become a Seller
-              </button>
+              {!isSeller && (
+                <button
+                  className="side-panel-link"
+                  onClick={() => {
+                    if (onBecomeSeller) onBecomeSeller();
+                    onClose();
+                  }}
+                >
+                  Become a Seller
+                </button>
+              )}
+
+              {isSeller && (
+                <button
+                  className="side-panel-link"
+                  onClick={() => {
+                    navigate("/seller/dashboard");
+                    onClose();
+                  }}
+                >
+                  Seller Dashboard
+                </button>
+              )}
 
               <hr />
 

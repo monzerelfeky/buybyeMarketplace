@@ -3,6 +3,7 @@ import { FaHeart, FaRegHeart, FaShoppingCart } from "react-icons/fa";
 import { useParams } from "react-router-dom";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
+import RateReview from "../../components/RateReview";
 import "../../styles/ProductPage.css";
 
 
@@ -11,6 +12,7 @@ export default function ProductPage() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+  const [quantityInput, setQuantityInput] = useState("1");
   const [isWishlisted, setIsWishlisted] = useState(false);
 
   useEffect(() => {
@@ -35,17 +37,70 @@ export default function ProductPage() {
   }, [productId]);
 
   const maxQty = product?.quantity ?? 1;
-  const increaseQty = () => setQuantity((q) => Math.min(q + 1, maxQty));
-  const decreaseQty = () => setQuantity((q) => (q > 1 ? q - 1 : 1));
+  useEffect(() => {
+    const next = Math.max(1, Math.min(quantity, maxQty));
+    setQuantity(next);
+    setQuantityInput(String(next));
+  }, [maxQty]);
+
+  const increaseQty = () => {
+    setQuantity((q) => {
+      const next = Math.min(q + 1, maxQty);
+      setQuantityInput(String(next));
+      return next;
+    });
+  };
+  const decreaseQty = () => {
+    setQuantity((q) => {
+      const next = q > 1 ? q - 1 : 1;
+      setQuantityInput(String(next));
+      return next;
+    });
+  };
   const handleQtyChange = (e) => {
-    const next = Number(e.target.value);
-    if (!Number.isFinite(next)) return;
-    const clamped = Math.max(1, Math.min(next, maxQty));
-    setQuantity(clamped);
+    const value = e.target.value;
+    if (value === "") {
+      setQuantityInput("");
+      return;
+    }
+    if (!/^\d+$/.test(value)) return;
+    setQuantityInput(value);
+  };
+
+  const commitQtyInput = () => {
+    const parsed = Number(quantityInput);
+    const next = Number.isFinite(parsed) ? Math.max(1, Math.min(parsed, maxQty)) : 1;
+    setQuantity(next);
+    setQuantityInput(String(next));
   };
 
   const handleAddToCart = () => {
-    console.log("Added to cart:", { product, quantity });
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      alert("Please login to add items to cart");
+      return;
+    }
+    const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+    fetch(`${API_BASE}/api/users/me/cart`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ itemId: product._id, quantity }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Add to cart failed");
+        return res.json();
+      })
+      .then(() => {
+        window.dispatchEvent(new Event("cart-updated"));
+        alert("Added to cart");
+      })
+      .catch((err) => {
+        console.error("Add to cart error:", err);
+        alert("Failed to add to cart");
+      });
   };
 
   const toggleWishlist = () => {
@@ -72,7 +127,18 @@ export default function ProductPage() {
               <img
                 src={
                   product.images?.[0]
-                    ? `${process.env.REACT_APP_API_BASE || "http://localhost:5000"}${product.images[0]}`
+                    ? (() => {
+                        const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+                        const img = product.images[0];
+                        if (img.startsWith("http://") || img.startsWith("https://")) return img;
+                        if (img.startsWith("data:")) return img;
+                        if (img.includes("uploads/images/")) {
+                          const filename = img.split("uploads/images/").pop();
+                          return `${API_BASE}/uploads/images/${filename}`;
+                        }
+                        if (img.startsWith("/")) return `${API_BASE}${img}`;
+                        return `${API_BASE}/uploads/images/${img}`;
+                      })()
                     : "https://via.placeholder.com/300"
                 }
                 alt={product.title}
@@ -124,8 +190,15 @@ export default function ProductPage() {
                       min="1"
                       max={maxQty}
                       className="quantity-display"
-                      value={quantity}
+                      value={quantityInput}
                       onChange={handleQtyChange}
+                      onBlur={commitQtyInput}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          commitQtyInput();
+                        }
+                      }}
                     />
                     <button
                       onClick={increaseQty}
@@ -154,7 +227,7 @@ export default function ProductPage() {
                 </div>
 
                 <div className="comment-section">
-                  
+                  <RateReview productId={productId} />
                 </div>
               </div>
             </div>
