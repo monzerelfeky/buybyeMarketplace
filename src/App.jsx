@@ -1,7 +1,7 @@
 // src/App.jsx
 import React from "react";
 import { Routes, Route } from "react-router-dom";
-
+import ScrollToTop from "./components/ScrolltoTop";
 import HomePage from "./pages/HomePage";
 
 // Seller pages (now in components)
@@ -72,6 +72,7 @@ import OrderTrackingPage from "./pages/OrderTrackingPage";
 export default function App() {
   return (
     <SellerProvider>
+      <ScrollToTop />
       <Routes>
         {/* Main */}
         <Route path="/" element={<HomePage />} />
@@ -106,7 +107,7 @@ export default function App() {
 
         {/* Product Route */}
         <Route path="/product/:productId" element={<ProductPage />} />
-  
+
         {/* Seller area */}
         <Route path="/seller/dashboard" element={<SellerDashboard />} />
         <Route path="/seller/items" element={<SellerItems />} />
@@ -134,9 +135,6 @@ export default function App() {
 
         {/*Order Tracking Route*/}
         <Route path="/order-tracking/:orderId" element={<OrderTrackingPage />} />
-
-
-
       </Routes>
     </SellerProvider>
   );
