@@ -95,16 +95,6 @@ export default function SidePanel({
               <button
                 className="side-panel-link"
                 onClick={() => {
-                  navigate("/seller/notifications");
-                  onClose();
-                }}
-              >
-                Notifications
-              </button>
-
-              <button
-                className="side-panel-link"
-                onClick={() => {
                   navigate("/seller/flags");
                   onClose();
                 }}
@@ -189,16 +179,6 @@ export default function SidePanel({
                     }}
                   >
                     My Orders
-                  </button>
-
-                  <button
-                    className="side-panel-link"
-                    onClick={() => {
-                      navigate("/notifications");
-                      onClose();
-                    }}
-                  >
-                    Notifications
                   </button>
 
                   <button

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { FaShoppingCart } from "react-icons/fa";
 import { useParams } from "react-router-dom";
 import Header from "../../components/Header";
@@ -27,6 +27,26 @@ export default function ProductPage() {
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryRequested, setSummaryRequested] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [cartToast, setCartToast] = useState({ message: "", type: "success", visible: false });
+  const toastTimerRef = useRef(null);
+
+  const showCartToast = (message, type = "success") => {
+    setCartToast({ message, type, visible: true });
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+    toastTimerRef.current = setTimeout(() => {
+      setCartToast((prev) => ({ ...prev, visible: false }));
+    }, 2000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -94,7 +114,7 @@ export default function ProductPage() {
   const handleAddToCart = () => {
     const token = localStorage.getItem("authToken");
     if (!token) {
-      alert("Please login to add items to cart");
+      showCartToast("Please login to add items to cart", "error");
       return;
     }
     const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
@@ -112,11 +132,11 @@ export default function ProductPage() {
       })
       .then(() => {
         window.dispatchEvent(new Event("cart-updated"));
-        alert("Added to cart");
+        showCartToast("Added to cart", "success");
       })
       .catch((err) => {
         console.error("Add to cart error:", err);
-        alert("Failed to add to cart");
+        showCartToast("Failed to add to cart", "error");
       });
   };
 
@@ -223,6 +243,11 @@ export default function ProductPage() {
       <Header />
 
       <div className="product-page">
+        {cartToast.visible && (
+          <div className={`cart-toast ${cartToast.type}`}>
+            {cartToast.message}
+          </div>
+        )}
         {loading ? (
           <div className="loading-container">
             <div className="spinner"></div>

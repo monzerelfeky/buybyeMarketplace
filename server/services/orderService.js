@@ -98,6 +98,11 @@ async function transformOrder(order) {
     email: '',
     phone: '',
   };
+  let sellerInfo = {
+    name: 'Unknown Seller',
+    email: '',
+    phone: '',
+  };
 
   if (orderObj.buyerId) {
     try {
@@ -113,6 +118,20 @@ async function transformOrder(order) {
       console.warn('Could not fetch buyer:', err.message);
     }
   }
+  if (orderObj.sellerId) {
+    try {
+      const seller = await User.findById(orderObj.sellerId).select(
+        'name email phone'
+      );
+      if (seller) {
+        sellerInfo.name = seller.name || seller.email || 'Unknown Seller';
+        sellerInfo.email = seller.email || '';
+        sellerInfo.phone = seller.phone || '';
+      }
+    } catch (err) {
+      console.warn('Could not fetch seller:', err.message);
+    }
+  }
 
   return {
     ...orderObj,
@@ -121,6 +140,9 @@ async function transformOrder(order) {
     buyerName: buyerInfo.name,
     buyerEmail: buyerInfo.email,
     buyerPhone: buyerInfo.phone,
+    sellerName: sellerInfo.name,
+    sellerEmail: sellerInfo.email,
+    sellerPhone: sellerInfo.phone,
   };
 }
 
