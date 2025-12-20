@@ -2,6 +2,7 @@ const express = require('express');
 const {
   listItems,
   getItem,
+  getReviewSummary,
   getSuggestions,
   createItem,
   updateItem,
