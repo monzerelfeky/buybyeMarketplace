@@ -4,7 +4,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import "../styles/OrderTrackingPage.css";
 
-const STATUS_STEPS = ["New", "Accepted", "Packed", "Shipped", "Delivered", "Cancelled"];
+const STATUS_STEPS = ["New", "Accepted", "Packed", "Shipped", "Delivered"];
 
 export default function OrderTrackingPage() {
   const { orderId } = useParams();
@@ -13,6 +13,7 @@ export default function OrderTrackingPage() {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [serverError, setServerError] = useState("");
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   // Fetch order from backend
   useEffect(() => {
@@ -78,9 +79,37 @@ export default function OrderTrackingPage() {
 
   // Determine current status index from status history
   const statusHistory = order.statusHistory || [];
-  const currentStatusIndex = statusHistory.length
-    ? Math.max(...statusHistory.map((s) => STATUS_STEPS.indexOf(s.status)))
-    : 0;
+  const historyIndexes = statusHistory
+    .map((s) => STATUS_STEPS.indexOf(s.status))
+    .filter((idx) => idx >= 0);
+  const currentStatusIndex = historyIndexes.length
+    ? Math.max(...historyIndexes)
+    : STATUS_STEPS.indexOf(order.status || "New");
+
+  const canCancel = ["New", "Accepted"].includes(order.status);
+  const isCancelled = order.status === "Cancelled";
+
+  const handleCancelOrder = async () => {
+    if (!canCancel || cancelLoading) return;
+    if (!window.confirm("Cancel this order? This action cannot be undone.")) return;
+    setCancelLoading(true);
+    try {
+      const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+      const res = await fetch(`${API_BASE}/api/orders/${order._id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "Cancelled", note: "Cancelled by buyer" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to cancel order");
+      setOrder(data);
+    } catch (err) {
+      console.error("Cancel order error:", err);
+      alert("Failed to cancel order.");
+    } finally {
+      setCancelLoading(false);
+    }
+  };
 
   return (
     <>
@@ -103,6 +132,14 @@ export default function OrderTrackingPage() {
           <div className="order-left">
             <section className="timeline-card">
               <h2>Order Status</h2>
+              {order.status === "Cancelled" && (
+                <div className="order-cancelled-banner">
+                  Cancelled on{" "}
+                  {order.updatedAt
+                    ? new Date(order.updatedAt).toLocaleString()
+                    : "N/A"}
+                </div>
+              )}
               <ol className="timeline">
                 {STATUS_STEPS.map((step, idx) => (
                   <li key={step} className={`timeline-step ${idx <= currentStatusIndex ? "active" : ""}`}>
@@ -137,8 +174,21 @@ export default function OrderTrackingPage() {
             </section>
           </div>
 
-          {/* Right column: Report Issue */}
+          {/* Right column: Actions */}
           <div className="order-right">
+            <section className="report-issue-card">
+              <h3>Manage Order</h3>
+              <p>You can cancel this order before it is packed.</p>
+              <div className="report-buttons">
+                <button
+                  className="secondary cancel-btn"
+                  onClick={handleCancelOrder}
+                  disabled={!canCancel || cancelLoading || isCancelled}
+                >
+                  {isCancelled ? "Order Cancelled" : cancelLoading ? "Cancelling..." : "Cancel Order"}
+                </button>
+              </div>
+            </section>
             <section className="report-issue-card">
               <h3>Report an Issue</h3>
               <p>If you faced any issue with this order, you can report it:</p>

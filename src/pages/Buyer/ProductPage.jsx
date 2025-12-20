@@ -1,9 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { FaHeart, FaRegHeart, FaShoppingCart } from "react-icons/fa";
+import { FaShoppingCart } from "react-icons/fa";
 import { useParams } from "react-router-dom";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import RateReview from "../../components/RateReview";
+import {
+  addToLocalWishlist,
+  addToWishlist,
+  getLocalWishlist,
+  getWishlist,
+  removeFromLocalWishlist,
+  removeFromWishlist,
+} from "../../utils/wishlist";
 import "../../styles/ProductPage.css";
 
 
@@ -14,6 +22,7 @@ export default function ProductPage() {
   const [quantity, setQuantity] = useState(1);
   const [quantityInput, setQuantityInput] = useState("1");
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
     setLoading(true);
@@ -34,6 +43,10 @@ export default function ProductPage() {
     };
 
     fetchProduct();
+  }, [productId]);
+
+  useEffect(() => {
+    setCurrentImageIndex(0);
   }, [productId]);
 
   const maxQty = product?.quantity ?? 1;
@@ -103,9 +116,70 @@ export default function ProductPage() {
       });
   };
 
-  const toggleWishlist = () => {
-    setIsWishlisted(!isWishlisted);
-    console.log(isWishlisted ? "Removed from wishlist" : "Added to wishlist", product);
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    const initWishlist = async () => {
+      if (token) {
+        try {
+          const data = await getWishlist();
+          setIsWishlisted(data.some((item) => String(item._id) === String(productId)));
+          return;
+        } catch (err) {
+          console.error("Failed to fetch wishlist:", err);
+        }
+      }
+      const local = getLocalWishlist();
+      setIsWishlisted(local.includes(productId));
+    };
+    initWishlist();
+  }, [productId]);
+
+  const toggleWishlist = async () => {
+    const token = localStorage.getItem("authToken");
+    try {
+      if (token) {
+        if (isWishlisted) {
+          await removeFromWishlist(productId);
+        } else {
+          await addToWishlist(productId);
+        }
+      } else {
+        if (isWishlisted) {
+          removeFromLocalWishlist(productId);
+        } else {
+          addToLocalWishlist(productId);
+        }
+      }
+      setIsWishlisted((prev) => !prev);
+    } catch (err) {
+      console.error("Wishlist update failed:", err);
+    }
+  };
+
+  const getImages = () => {
+    const rawImages = Array.isArray(product?.images)
+      ? product.images
+      : product?.images
+      ? [product.images]
+      : product?.image
+      ? [product.image]
+      : [];
+    const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+    return rawImages
+      .map((img) => {
+        if (!img) return null;
+        if (typeof img === "object" && typeof img.url === "string") return img.url;
+        if (typeof img !== "string") return null;
+        if (img.startsWith("http://") || img.startsWith("https://")) return img;
+        if (img.startsWith("data:")) return img;
+        if (img.includes("uploads/images/")) {
+          const filename = img.split("uploads/images/").pop();
+          return `${API_BASE}/uploads/images/${filename}`;
+        }
+        if (img.startsWith("/")) return `${API_BASE}${img}`;
+        return `${API_BASE}/uploads/images/${img}`;
+      })
+      .filter(Boolean);
   };
 
   return (
@@ -124,25 +198,52 @@ export default function ProductPage() {
           <div className="product-container">
             {/* Image Gallery */}
             <div className="img-gallery">
-              <img
-                src={
-                  product.images?.[0]
-                    ? (() => {
-                        const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
-                        const img = product.images[0];
-                        if (img.startsWith("http://") || img.startsWith("https://")) return img;
-                        if (img.startsWith("data:")) return img;
-                        if (img.includes("uploads/images/")) {
-                          const filename = img.split("uploads/images/").pop();
-                          return `${API_BASE}/uploads/images/${filename}`;
-                        }
-                        if (img.startsWith("/")) return `${API_BASE}${img}`;
-                        return `${API_BASE}/uploads/images/${img}`;
-                      })()
-                    : "https://via.placeholder.com/300"
-                }
-                alt={product.title}
-              />
+              {(() => {
+                const images = getImages();
+                const hasMultiple = images.length > 1;
+                const current = images.length > 0 ? images[currentImageIndex] : null;
+                return (
+                  <>
+                    {current ? (
+                      <img src={current} alt={product.title} />
+                    ) : (
+                      <div className="img-placeholder">No Image</div>
+                    )}
+
+                    {hasMultiple && (
+                      <>
+                        <button
+                          className="image-nav-btn prev-btn"
+                          onClick={() =>
+                            setCurrentImageIndex((i) =>
+                              i > 0 ? i - 1 : images.length - 1
+                            )
+                          }
+                          aria-label="Previous image"
+                        >
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                          </svg>
+                        </button>
+                        <button
+                          className="image-nav-btn next-btn"
+                          onClick={() =>
+                            setCurrentImageIndex((i) => (i < images.length - 1 ? i + 1 : 0))
+                          }
+                          aria-label="Next image"
+                        >
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                          </svg>
+                        </button>
+                        <div className="image-counter">
+                          {currentImageIndex + 1} / {images.length}
+                        </div>
+                      </>
+                    )}
+                  </>
+                );
+              })()}
             </div>
 
             {/* Product Information */}
@@ -150,15 +251,24 @@ export default function ProductPage() {
               <div className="product-header">
                 <h1 className="product-title">{product.title}</h1>
                 <button
-                  className="wishlist-btn"
+                  className={`favorite-heart-btn ${isWishlisted ? "favorited" : ""}`}
                   onClick={toggleWishlist}
-                  aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                  aria-label={isWishlisted ? "Remove from favorites" : "Add to favorites"}
                 >
-                  {isWishlisted ? (
-                    <FaHeart className="heart-icon filled" />
-                  ) : (
-                    <FaRegHeart className="heart-icon" />
-                  )}
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="heart-outline"
+                  >
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                  </svg>
+                  <span className="heart-filled">💚</span>
                 </button>
               </div>
 

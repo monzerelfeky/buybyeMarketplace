@@ -7,18 +7,51 @@ export default function CartPanel({ isOpen, onClose }) {
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(false);
     const [qtyInputs, setQtyInputs] = useState({});
+    const [currentImageIndex, setCurrentImageIndex] = useState({});
     const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
-    const getImageSrc = (img) => {
-        if (!img || typeof img !== "string") return null;
-        if (img.startsWith("http://") || img.startsWith("https://")) return img;
-        if (img.startsWith("data:")) return img;
-        if (img.includes("uploads/images/")) {
-            const filename = img.split("uploads/images/").pop();
-            return `${API_BASE}/uploads/images/${filename}`;
-        }
-        if (img.startsWith("/")) return `${API_BASE}${img}`;
-        return `${API_BASE}/uploads/images/${img}`;
+    const getImages = (item) => {
+        const rawImages = Array.isArray(item?.images)
+            ? item.images
+            : item?.images
+            ? [item.images]
+            : item?.image
+            ? [item.image]
+            : [];
+        return rawImages
+            .map((img) => {
+                if (!img) return null;
+                if (typeof img === "object" && typeof img.url === "string") return img.url;
+                if (typeof img !== "string") return null;
+                if (img.startsWith("http://") || img.startsWith("https://")) return img;
+                if (img.startsWith("data:")) return img;
+                if (img.includes("uploads/images/")) {
+                    const filename = img.split("uploads/images/").pop();
+                    return `${API_BASE}/uploads/images/${filename}`;
+                }
+                if (img.startsWith("/uploads/")) return `${API_BASE}${img}`;
+                if (img.startsWith("/")) return `${API_BASE}${img}`;
+                return `${API_BASE}/uploads/images/${img}`;
+            })
+            .filter(Boolean);
+    };
+
+    const handlePrevImage = (itemId, imageCount, e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setCurrentImageIndex((prev) => ({
+            ...prev,
+            [itemId]: prev[itemId] > 0 ? prev[itemId] - 1 : imageCount - 1,
+        }));
+    };
+
+    const handleNextImage = (itemId, imageCount, e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setCurrentImageIndex((prev) => ({
+            ...prev,
+            [itemId]: prev[itemId] < imageCount - 1 ? prev[itemId] + 1 : 0,
+        }));
     };
 
     useEffect(() => {
@@ -144,12 +177,49 @@ export default function CartPanel({ isOpen, onClose }) {
                     const maxQty = entry.itemId?.quantity ?? Infinity;
                     const isMaxed = Number.isFinite(maxQty) && entry.quantity >= maxQty;
                     const itemKey = entry.itemId?._id || entry.itemId;
+                    const itemImages = getImages(entry.itemId);
+                    const currentIndex = currentImageIndex[itemKey] || 0;
+                    const currentImage =
+                        itemImages.length > 0 ? itemImages[currentIndex] : null;
+                    const hasMultipleImages = itemImages.length > 1;
                     return (
                     <div className="cart-panel-item" key={itemKey}>
-                        <img
-                            src={getImageSrc(entry.itemId?.images?.[0]) || "https://via.placeholder.com/80"}
-                            alt={entry.itemId?.title || "Item"}
-                        />
+                        <div className="cart-item-image">
+                            {currentImage ? (
+                                <img
+                                    src={currentImage}
+                                    alt={entry.itemId?.title || "Item"}
+                                />
+                            ) : (
+                                <div className="cart-image-placeholder">No Image</div>
+                            )}
+
+                            {hasMultipleImages && (
+                                <>
+                                    <button
+                                        className="image-nav-btn prev-btn"
+                                        onClick={(e) => handlePrevImage(itemKey, itemImages.length, e)}
+                                        aria-label="Previous image"
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <polyline points="15 18 9 12 15 6"></polyline>
+                                        </svg>
+                                    </button>
+                                    <button
+                                        className="image-nav-btn next-btn"
+                                        onClick={(e) => handleNextImage(itemKey, itemImages.length, e)}
+                                        aria-label="Next image"
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <polyline points="9 18 15 12 9 6"></polyline>
+                                        </svg>
+                                    </button>
+                                    <div className="image-counter">
+                                        {currentIndex + 1} / {itemImages.length}
+                                    </div>
+                                </>
+                            )}
+                        </div>
                         <div className="cart-item-info">
                             <h3>{entry.itemId?.title || "Item"}</h3>
                             <p>

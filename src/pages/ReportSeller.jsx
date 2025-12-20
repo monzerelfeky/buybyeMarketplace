@@ -14,6 +14,7 @@ export default function ReportSellerPage() {
   const [serverError, setServerError] = useState("");
   const [flaggedItems, setFlaggedItems] = useState(new Set());
   const [flagError, setFlagError] = useState("");
+  const [currentImageIndex, setCurrentImageIndex] = useState({});
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -41,6 +42,70 @@ export default function ReportSellerPage() {
   }, [orderId]);
 
   const products = order?.items || [];
+
+  const resolveImageUrl = (img) => {
+    const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+    if (!img) return null;
+    if (typeof img === "object" && typeof img.url === "string") return img.url;
+    if (typeof img !== "string") return null;
+    if (img.startsWith("http://") || img.startsWith("https://")) return img;
+    if (img.startsWith("data:")) return img;
+    if (img.startsWith("/uploads/")) return `${API_BASE}${img}`;
+    if (img.startsWith("/")) return `${API_BASE}${img}`;
+    return `${API_BASE}/uploads/images/${img}`;
+  };
+
+  const getProductImage = (product) => {
+    const rawImages = Array.isArray(product?.images)
+      ? product.images
+      : product?.images
+      ? [product.images]
+      : product?.image
+      ? [product.image]
+      : product?.itemId?.images
+      ? Array.isArray(product.itemId.images)
+        ? product.itemId.images
+        : [product.itemId.images]
+      : product?.itemId?.image
+      ? [product.itemId.image]
+      : [];
+    return rawImages.map(resolveImageUrl).filter(Boolean)[0] || null;
+  };
+
+  const getProductImages = (product) => {
+    const rawImages = Array.isArray(product?.images)
+      ? product.images
+      : product?.images
+      ? [product.images]
+      : product?.image
+      ? [product.image]
+      : product?.itemId?.images
+      ? Array.isArray(product.itemId.images)
+        ? product.itemId.images
+        : [product.itemId.images]
+      : product?.itemId?.image
+      ? [product.itemId.image]
+      : [];
+    return rawImages.map(resolveImageUrl).filter(Boolean);
+  };
+
+  const handlePrevImage = (itemId, imageCount, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => ({
+      ...prev,
+      [itemId]: prev[itemId] > 0 ? prev[itemId] - 1 : imageCount - 1,
+    }));
+  };
+
+  const handleNextImage = (itemId, imageCount, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => ({
+      ...prev,
+      [itemId]: prev[itemId] < imageCount - 1 ? prev[itemId] + 1 : 0,
+    }));
+  };
 
   const getProductId = (product) =>
     String(
@@ -173,6 +238,11 @@ export default function ReportSellerPage() {
               products.map((p) => {
                 const productId = getProductId(p);
                 const isFlagged = flaggedItems.has(productId);
+                const images = getProductImages(p);
+                const currentIndex = currentImageIndex[productId] || 0;
+                const currentImage =
+                  images.length > 0 ? images[currentIndex] : null;
+                const hasMultipleImages = images.length > 1;
                 return (
               <div
                 key={productId}
@@ -181,7 +251,39 @@ export default function ReportSellerPage() {
                 } ${isFlagged ? "disabled" : ""}`}
                 onClick={() => selectProduct(productId)}
               >
-                <img src="https://via.placeholder.com/90" alt={p.name} />
+                <div className="product-image">
+                  {currentImage ? (
+                    <img src={currentImage} alt={p.name} />
+                  ) : (
+                    <div className="product-image-placeholder">No Image</div>
+                  )}
+
+                  {hasMultipleImages && (
+                    <>
+                      <button
+                        className="image-nav-btn prev-btn"
+                        onClick={(e) => handlePrevImage(productId, images.length, e)}
+                        aria-label="Previous image"
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                      </button>
+                      <button
+                        className="image-nav-btn next-btn"
+                        onClick={(e) => handleNextImage(productId, images.length, e)}
+                        aria-label="Next image"
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                      </button>
+                      <div className="image-counter">
+                        {currentIndex + 1} / {images.length}
+                      </div>
+                    </>
+                  )}
+                </div>
 
                 <div className="product-info">
                   <h4>{p.name}</h4>

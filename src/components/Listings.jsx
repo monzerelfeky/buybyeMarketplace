@@ -16,6 +16,7 @@ export default function Listings({ items = [], title, variant = "" }) {
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState({});
+  const [currentUserId, setCurrentUserId] = useState(null);
   const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
   const navigate = useNavigate();
 
@@ -24,6 +25,20 @@ export default function Listings({ items = [], title, variant = "" }) {
 
   // Use real items if provided
   const displayItems = items.length > 0 ? items : [];
+
+  useEffect(() => {
+    const stored = localStorage.getItem("user");
+    if (!stored) {
+      setCurrentUserId(null);
+      return;
+    }
+    try {
+      const user = JSON.parse(stored);
+      setCurrentUserId(user?.id || user?._id || null);
+    } catch {
+      setCurrentUserId(null);
+    }
+  }, []);
 
   // Fetch wishlist on mount
   useEffect(() => {
@@ -61,13 +76,25 @@ export default function Listings({ items = [], title, variant = "" }) {
     const token = localStorage.getItem("authToken");
 
     try {
-      if (wishlistIds.includes(itemId)) {
-        await removeFromWishlist(itemId);
-        setWishlistIds(wishlistIds.filter((id) => id !== itemId));
+      if (token) {
+        if (wishlistIds.includes(itemId)) {
+          await removeFromWishlist(itemId);
+          setWishlistIds(wishlistIds.filter((id) => id !== itemId));
+        } else {
+          await addToWishlist(itemId);
+          setWishlistIds([...wishlistIds, itemId]);
+        }
       } else {
-        await addToWishlist(itemId);
-        setWishlistIds([...wishlistIds, itemId]);
+        if (wishlistIds.includes(itemId)) {
+          removeFromLocalWishlist(itemId);
+          setWishlistIds(wishlistIds.filter((id) => id !== itemId));
+        } else {
+          addToLocalWishlist(itemId);
+          setWishlistIds([...wishlistIds, itemId]);
+        }
       }
+    } catch (err) {
+      console.error("Wishlist toggle failed:", err);
     }
   };
 
@@ -107,7 +134,12 @@ export default function Listings({ items = [], title, variant = "" }) {
       ) : null}
 
       <div className="listings-grid">
-        {displayItems.map((item) => {
+        {displayItems.filter((item) => {
+          if (item?.isActive === false) return false;
+          if (!currentUserId) return true;
+          const sellerId = item?.seller || item?.sellerId || item?.ownerId || item?.userId;
+          return String(sellerId) !== String(currentUserId);
+        }).map((item) => {
           // ✅ Image helper: supports Cloudinary objects + legacy strings
           const getImageSrc = (img) => {
             if (!img) return null;
@@ -165,7 +197,7 @@ export default function Listings({ items = [], title, variant = "" }) {
             <article
               key={item._id}
               className="listing-card"
-              onClick={() => navigate(`/listing/${item._id}`)}
+              onClick={() => navigate(`/product/${item._id}`)}
               style={{ cursor: "pointer" }}
             >
               <div className="listing-image">

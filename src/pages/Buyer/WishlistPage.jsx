@@ -17,6 +17,7 @@ export default function WishlistPage() {
   const [wishlistItems, setWishlistItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState({});
   const navigate = useNavigate();
 
   const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
@@ -84,15 +85,44 @@ export default function WishlistPage() {
     }
   };
 
-  const getImageSrc = (images) => {
-    if (!images || images.length === 0) return null;
-    const img = images[0];
-    if (!img || typeof img !== "string") return null;
-    if (img.startsWith("http://") || img.startsWith("https://")) return img;
-    if (img.startsWith("data:")) return img;
-    if (img.startsWith("/uploads/")) return `${API_BASE}${img}`;
-    if (img.startsWith("/")) return `${API_BASE}${img}`;
-    return `${API_BASE}/uploads/images/${img}`;
+  const getImages = (item) => {
+    const rawImages = Array.isArray(item?.images)
+      ? item.images
+      : item?.images
+      ? [item.images]
+      : item?.image
+      ? [item.image]
+      : [];
+    return rawImages
+      .map((img) => {
+        if (!img) return null;
+        if (typeof img === "object" && typeof img.url === "string") return img.url;
+        if (typeof img !== "string") return null;
+        if (img.startsWith("http://") || img.startsWith("https://")) return img;
+        if (img.startsWith("data:")) return img;
+        if (img.startsWith("/uploads/")) return `${API_BASE}${img}`;
+        if (img.startsWith("/")) return `${API_BASE}${img}`;
+        return `${API_BASE}/uploads/images/${img}`;
+      })
+      .filter(Boolean);
+  };
+
+  const handlePrevImage = (itemId, imageCount, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => ({
+      ...prev,
+      [itemId]: prev[itemId] > 0 ? prev[itemId] - 1 : imageCount - 1,
+    }));
+  };
+
+  const handleNextImage = (itemId, imageCount, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => ({
+      ...prev,
+      [itemId]: prev[itemId] < imageCount - 1 ? prev[itemId] + 1 : 0,
+    }));
   };
 
   if (loading) {
@@ -174,7 +204,11 @@ export default function WishlistPage() {
         ) : (
           <div className="wishlist-grid">
             {wishlistItems.map((item) => {
-              const imageSrc = getImageSrc(item.images);
+              const itemImages = getImages(item);
+              const currentIndex = currentImageIndex[item._id] || 0;
+              const currentImage =
+                itemImages.length > 0 ? itemImages[currentIndex] : null;
+              const hasMultipleImages = itemImages.length > 1;
               return (
                 <article
                   key={item._id}
@@ -182,9 +216,9 @@ export default function WishlistPage() {
                   onClick={() => navigate(`/product/${item._id}`)}
                 >
                   <div className="listing-image">
-                    {imageSrc && (
+                    {currentImage && (
                       <img
-                        src={imageSrc}
+                        src={currentImage}
                         alt={item.title}
                         className="listing-image-element"
                         onError={(e) => {
@@ -194,9 +228,35 @@ export default function WishlistPage() {
                         }}
                       />
                     )}
-                    <div className={`image-placeholder ${imageSrc ? "image-placeholder-hidden" : "image-placeholder-visible"}`}>
+                    <div className={`image-placeholder ${currentImage ? "image-placeholder-hidden" : "image-placeholder-visible"}`}>
                       No Image
                     </div>
+
+                    {hasMultipleImages && (
+                      <>
+                        <button
+                          className="image-nav-btn prev-btn"
+                          onClick={(e) => handlePrevImage(item._id, itemImages.length, e)}
+                          aria-label="Previous image"
+                        >
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                          </svg>
+                        </button>
+                        <button
+                          className="image-nav-btn next-btn"
+                          onClick={(e) => handleNextImage(item._id, itemImages.length, e)}
+                          aria-label="Next image"
+                        >
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                          </svg>
+                        </button>
+                        <div className="image-counter">
+                          {currentIndex + 1} / {itemImages.length}
+                        </div>
+                      </>
+                    )}
 
                     <button
                       className="favorite-heart-btn favorited"

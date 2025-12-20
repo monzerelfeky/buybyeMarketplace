@@ -57,6 +57,17 @@
   margin-bottom: 15px;
 }
 
+.order-cancelled-banner {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
 /* Timeline */
 .timeline {
   list-style: none;
@@ -240,6 +251,23 @@
   background: #5a6268;
   transform: translateY(-1px);
   box-shadow: 0 6px 15px rgba(108, 117, 125, 0.3);
+}
+
+.report-buttons .secondary.cancel-btn {
+  background: #dc2626;
+}
+
+.report-buttons .secondary.cancel-btn:hover {
+  background: #b91c1c;
+  box-shadow: 0 6px 15px rgba(220, 38, 38, 0.3);
+}
+
+.report-buttons .secondary.cancel-btn:disabled {
+  background: #848484;
+  color: #282828;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
 /* Contact seller */
