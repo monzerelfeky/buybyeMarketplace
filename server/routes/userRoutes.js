@@ -3,6 +3,7 @@ const { protect } = require('../utils/authMiddleware');
 const {
   getProfile,
   updateProfile,
+  updateSellerStatus,
   listAddresses,
   addAddress,
   updateAddress,
@@ -20,6 +21,7 @@ const router = express.Router();
 
 router.get('/me', protect, getProfile);
 router.put('/me', protect, updateProfile);
+router.patch('/me/seller', protect, updateSellerStatus);
 
 router.get('/me/addresses', protect, listAddresses);
 router.post('/me/addresses', protect, addAddress);

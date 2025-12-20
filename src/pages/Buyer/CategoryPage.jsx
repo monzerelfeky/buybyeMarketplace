@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
-import ProductCard from "../../components/ProductCard";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
+import Listings from "../../components/Listings";
 import "../../styles/CategoryPage.css";
 
 export default function CategoryPage() {
@@ -10,10 +10,11 @@ export default function CategoryPage() {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const subcategory = params.get("subcategory");
+  const query = params.get("query");
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [favorites, setFavorites] = useState({});
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
   const formatCategoryName = (name) => {
     return name
@@ -22,56 +23,37 @@ export default function CategoryPage() {
       .join(" ");
   };
 
-  const toggleFavorite = (id) => {
-    setFavorites((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
-  };
-
   useEffect(() => {
     setLoading(true);
 
     const fetchProducts = async () => {
-      const simulatedData = [
-        {
-          id: 1,
-          title: "Product 1",
-          price: "100",
-          image: "https://via.placeholder.com/150",
-          time: "2 hours ago",
-        },
-        {
-          id: 2,
-          title: "Product 2",
-          price: "200",
-          image: "https://via.placeholder.com/150",
-          time: "5 hours ago",
-        },
-        {
-          id: 3,
-          title: "Product 3",
-          price: "150",
-          image: "https://via.placeholder.com/150",
-          time: "1 day ago",
-        },
-        {
-          id: 4,
-          title: "Product 4",
-          price: "250",
-          image: "https://via.placeholder.com/150",
-          time: "3 hours ago",
-        },
-      ];
+      try {
+        const formattedCategory =
+          subcategory
+            ? formatCategoryName(subcategory)
+            : categoryName === "all"
+              ? ""
+              : formatCategoryName(categoryName);
+        const searchParams = new URLSearchParams();
+        if (formattedCategory) searchParams.set("category", formattedCategory);
+        if (query) searchParams.set("query", query);
 
-      setTimeout(() => {
-        setProducts(simulatedData);
+        const res = await fetch(
+          `${API_BASE}/api/items?${searchParams.toString()}`
+        );
+        if (!res.ok) throw new Error("Category fetch failed");
+        const data = await res.json();
+        setProducts(data);
+      } catch (err) {
+        console.error("Failed to fetch products:", err);
+        setProducts([]);
+      } finally {
         setLoading(false);
-      }, 500);
+      }
     };
 
     fetchProducts();
-  }, [categoryName, subcategory]);
+  }, [API_BASE, categoryName, subcategory, query]);
 
   return (
     <>
@@ -79,11 +61,15 @@ export default function CategoryPage() {
 
       <div className="category-page">
         <div className="category-header">
-          <h1>{formatCategoryName(categoryName)}</h1>
+          <h1>
+            {categoryName === "all"
+              ? "Search Results"
+              : formatCategoryName(categoryName)}
+          </h1>
           {subcategory && <h2>{formatCategoryName(subcategory)}</h2>}
         </div>
 
-        <div className="products-container">
+        <div className="category-results">
           {loading ? (
             <div className="loading-container">
               <div className="spinner"></div>
@@ -92,18 +78,7 @@ export default function CategoryPage() {
           ) : products.length === 0 ? (
             <p className="no-products">No products found.</p>
           ) : (
-            products.map((product) => (
-              <ProductCard
-                key={product.id}
-                id={product.id}
-                title={product.title}
-                price={product.price}
-                image={product.image}
-                time={product.time}
-                isFavorite={favorites[product.id]}
-                onToggleFavorite={toggleFavorite}
-              />
-            ))
+            <Listings items={products} />
           )}
         </div>
       </div>

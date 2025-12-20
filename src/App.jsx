@@ -42,7 +42,6 @@ import SellerFees from "./pages/sell/SellerFees";
 import CartPage from "./pages/Buyer/CartPage";
 
 //Search Page
-import SearchPage from "./pages/Buyer/SearchPage";
 
 //Category Page
 import CategoryPage from "./pages/Buyer/CategoryPage";
@@ -70,6 +69,8 @@ import OrderTrackingPage from "./pages/OrderTrackingPage";
 //Notifications Page
 import NotificationsPage from "./pages/NotificationsPage";
 import SellerNotificationsPage from "./pages/SellerNotificationsPage";
+
+
 
 export default function App() {
   return (
@@ -102,8 +103,6 @@ export default function App() {
         {/* Cart Route */}
         <Route path="/cart" element={<CartPage />} />
 
-        {/* Search Route */}
-        <Route path="/search" element={<SearchPage />} />
 
         {/* Category Route */}
         <Route path="/category/:categoryName" element={<CategoryPage />} />
@@ -135,13 +134,15 @@ export default function App() {
         <Route path="/order-history" element={<OrderHistoryPage />} />
 
         {/*Report Seller Route*/}
-        <Route path="/report-seller/:sellerId" element={<ReportSeller />} />
+        <Route path="/report-seller/:orderId" element={<ReportSeller />} />
 
         {/*Order Tracking Route*/}
         <Route path="/order-tracking/:orderId" element={<OrderTrackingPage />} />
 
         {/*Notifications Route*/}
         <Route path="/notifications" element={<NotificationsPage />} />
+
+
       </Routes>
     </SellerProvider>
   );

@@ -27,7 +27,11 @@ export default function OrderHistoryPage() {
 
       try {
         const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
-        const res = await fetch(`${API_BASE}/api/orders`);
+        const stored = localStorage.getItem("user");
+        const user = stored ? JSON.parse(stored) : null;
+        const params = new URLSearchParams();
+        if (user?.id || user?._id) params.set("buyerId", user.id || user._id);
+        const res = await fetch(`${API_BASE}/api/orders?${params.toString()}`);
         const data = await res.json();
 
         if (!res.ok) {

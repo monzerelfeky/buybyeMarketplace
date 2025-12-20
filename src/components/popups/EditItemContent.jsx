@@ -3,8 +3,12 @@ import React, { useState } from "react";
 import "../../styles/seller/editItem.css";
 
 export default function EditItemContent({ item, onClose, onSave }) {
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
   const [title, setTitle] = useState(item.title);
   const [price, setPrice] = useState(item.price !== undefined && item.price !== null ? String(item.price) : '');
+  const [quantity, setQuantity] = useState(
+    item.quantity !== undefined && item.quantity !== null ? String(item.quantity) : ""
+  );
   const [description, setDescription] = useState(item.description);
   const [category, setCategory] = useState(item.category || "Electronics");
   const [images, setImages] = useState(item.images || []);
@@ -39,7 +43,9 @@ export default function EditItemContent({ item, onClose, onSave }) {
   };
 
   const handleRemoveImage = (id) => {
-    setImages((prev) => prev.filter((img) => img.id !== id));
+    setImages((prev) =>
+      prev.filter((img) => (typeof img === "string" ? img !== id : img.id !== id))
+    );
   };
 
   const handleSave = () => {
@@ -63,6 +69,7 @@ export default function EditItemContent({ item, onClose, onSave }) {
       ...item,
       title: title.trim(),
       price: normalizedPrice,
+      quantity: Number.isFinite(Number(quantity)) ? Number(quantity) : 0,
       description: description.trim(),
       category,
       images: allImages,  // Send all images (existing + new) to backend
@@ -111,6 +118,21 @@ export default function EditItemContent({ item, onClose, onSave }) {
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             placeholder="299.99"
+            required
+          />
+        </div>
+
+        {/* Quantity */}
+        <div className="ei-field">
+          <label className="ei-label">Quantity</label>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            className="ei-input"
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            placeholder="0"
             required
           />
         </div>
@@ -167,18 +189,29 @@ export default function EditItemContent({ item, onClose, onSave }) {
 
           {images.length > 0 && (
             <div className="ei-preview-grid">
-              {images.map((img) => (
-                <div key={img.id} className="ei-preview-img">
-                  <img src={img.base64} alt="preview" />
-                  <button
-                    type="button"
-                    className="ei-remove-img"
-                    onClick={() => handleRemoveImage(img.id)}
-                  >
-                    ✖
-                  </button>
-                </div>
-              ))}
+              {images.map((img) => {
+                const src = typeof img === "string"
+                  ? (img.startsWith("http://") || img.startsWith("https://") || img.startsWith("data:"))
+                    ? img
+                    : img.startsWith("/")
+                      ? `${API_BASE}${img}`
+                      : `${API_BASE}/uploads/images/${img}`
+                  : img.base64;
+                const key = typeof img === "string" ? img : img.id;
+                const removeId = typeof img === "string" ? img : img.id;
+                return (
+                  <div key={key} className="ei-preview-img">
+                    <img src={src} alt="preview" />
+                    <button
+                      type="button"
+                      className="ei-remove-img"
+                      onClick={() => handleRemoveImage(removeId)}
+                    >
+                      X
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

@@ -14,20 +14,6 @@ export default function OrderTrackingPage() {
   const [loading, setLoading] = useState(true);
   const [serverError, setServerError] = useState("");
 
-  const [comments, setComments] = useState([]);
-  const [commentText, setCommentText] = useState("");
-  const [editingCommentId, setEditingCommentId] = useState(null);
-
-  // Status colors
-  const statusColors = {
-    New: "#FFA500",
-    Accepted: "#1E90FF",
-    Packed: "#6f42c1",
-    Shipped: "#1E90FF",
-    Delivered: "#28A745",
-    Cancelled: "#DC3545",
-  };
-
   // Fetch order from backend
   useEffect(() => {
     const fetchOrder = async () => {
@@ -44,10 +30,6 @@ export default function OrderTrackingPage() {
           setOrder(null);
         } else {
           setOrder(data);
-
-          // Load comments if available
-          const savedComments = data.comments || [];
-          setComments(savedComments.sort((a, b) => a.ts - b.ts));
         }
       } catch (err) {
         console.error("Fetch order error:", err);
@@ -59,32 +41,6 @@ export default function OrderTrackingPage() {
 
     fetchOrder();
   }, [orderId]);
-
-  // Comment handlers
-  const submitComment = () => {
-    if (!commentText.trim()) return alert("Enter a comment.");
-
-    if (editingCommentId) {
-      setComments((prev) =>
-        prev.map((c) => (c.id === editingCommentId ? { ...c, text: commentText, ts: Date.now() } : c))
-      );
-      setEditingCommentId(null);
-    } else {
-      setComments((prev) => [...prev, { id: Date.now(), text: commentText.trim(), ts: Date.now() }]);
-    }
-
-    setCommentText("");
-  };
-
-  const editComment = (c) => {
-    setEditingCommentId(c.id);
-    setCommentText(c.text);
-  };
-
-  const deleteComment = (id) => {
-    if (!window.confirm("Delete this comment?")) return;
-    setComments((prev) => prev.filter((c) => c.id !== id));
-  };
 
   if (loading) {
     return (
@@ -110,6 +66,16 @@ export default function OrderTrackingPage() {
     );
   }
 
+  // Status colors
+  const statusColors = {
+    New: "#FFA500",
+    Accepted: "#1E90FF",
+    Packed: "#6f42c1",
+    Shipped: "#1E90FF",
+    Delivered: "#28A745",
+    Cancelled: "#DC3545",
+  };
+
   // Determine current status index from status history
   const statusHistory = order.statusHistory || [];
   const currentStatusIndex = statusHistory.length
@@ -123,8 +89,12 @@ export default function OrderTrackingPage() {
         <div className="order-header">
           <h1>Order #{order.orderNo || order._id}</h1>
           <div className="order-meta">
-            <span>Total: <strong>${order.totalPrice}</strong></span>
-            <span>Placed: {order.placedAt ? new Date(order.placedAt).toLocaleString() : "N/A"}</span>
+            <span>
+              Total: <strong>${order.totalPrice}</strong>
+            </span>
+            <span>
+              Placed: {order.placedAt ? new Date(order.placedAt).toLocaleString() : "N/A"}
+            </span>
           </div>
         </div>
 
@@ -136,8 +106,21 @@ export default function OrderTrackingPage() {
               <ol className="timeline">
                 {STATUS_STEPS.map((step, idx) => (
                   <li key={step} className={`timeline-step ${idx <= currentStatusIndex ? "active" : ""}`}>
-                    <div className="step-marker" style={{ backgroundColor: idx <= currentStatusIndex ? statusColors[step] : "#ccc" }}>
-                      {idx + 1}
+                    <div className="step-marker-wrap">
+                      <div
+                        className={`step-marker ${idx < currentStatusIndex ? "completed" : ""} ${
+                          idx === currentStatusIndex ? "active" : ""
+                        }`}
+                        style={{
+                          backgroundColor: idx <= currentStatusIndex ? statusColors[step] : "#ccc",
+                          color: idx <= currentStatusIndex ? statusColors[step] : "#ccc",
+                        }}
+                      >
+                        {idx + 1}
+                      </div>
+                      {idx < STATUS_STEPS.length - 1 && (
+                        <div className={`step-line ${idx < currentStatusIndex ? "completed" : ""}`} />
+                      )}
                     </div>
                     <div className="step-content">
                       <div className="step-title">{step}</div>
@@ -154,53 +137,19 @@ export default function OrderTrackingPage() {
             </section>
           </div>
 
-          {/* Right column: comments */}
+          {/* Right column: Report Issue */}
           <div className="order-right">
-            <section className="comments-card">
-              <h3>Comments</h3>
-              <textarea
-                placeholder="Add a comment about your order..."
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-              />
-              <div className="comment-actions">
-                <button className="primary" onClick={submitComment}>
-                  {editingCommentId ? "Update Comment" : "Add Comment"}
+            <section className="report-issue-card">
+              <h3>Report an Issue</h3>
+              <p>If you faced any issue with this order, you can report it:</p>
+              
+              <div className="report-buttons">
+                <button
+                  className="secondary"
+                  onClick={() => navigate(`/report-seller/${order._id}`)}
+                >
+                  Flag the seller
                 </button>
-                {editingCommentId && (
-                  <button
-                    className="secondary"
-                    onClick={() => {
-                      setEditingCommentId(null);
-                      setCommentText("");
-                    }}
-                  >
-                    Cancel
-                  </button>
-                )}
-              </div>
-
-              <div className="comments-list">
-                {comments.length === 0 ? (
-                  <p className="muted">No comments yet.</p>
-                ) : (
-                  comments.slice().reverse().map((c) => (
-                    <div className="comment-row" key={c.id}>
-                      <div className="comment-meta">
-                        <span className="comment-ts">{new Date(c.ts).toLocaleString()}</span>
-                      </div>
-                      <div className="comment-text">{c.text}</div>
-                      <div className="comment-actions">
-                        <button onClick={() => editComment(c)} className="small">
-                          Edit
-                        </button>
-                        <button onClick={() => deleteComment(c.id)} className="small danger">
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
               </div>
             </section>
           </div>
