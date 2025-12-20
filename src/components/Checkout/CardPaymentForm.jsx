@@ -30,7 +30,7 @@ const isExpiryValid = (value) => {
   return true;
 };
 
-export default function CardPaymentForm({ onPay, isSubmitting = false }) {
+export default function CardPaymentForm({ onPay, isSubmitting = false, disabledReason = "" }) {
   const [cardNumber, setCardNumber] = useState("");
   const [expiry, setExpiry] = useState("");
   const [cvv, setCvv] = useState("");
@@ -47,6 +47,7 @@ export default function CardPaymentForm({ onPay, isSubmitting = false }) {
   const isCardNumberValid = cardDigits.length === 16 && isValidCardNumber(cardDigits) && cardType !== "unknown";
   const isCvvValid = /^\d{3}$/.test(cvv);
   const isFormValid = isCardNumberValid && isExpiryValid(expiry) && isCvvValid;
+  const isBlocked = Boolean(disabledReason);
 
   const handlePay = (e) => {
     e.preventDefault();
@@ -114,9 +115,10 @@ export default function CardPaymentForm({ onPay, isSubmitting = false }) {
         </div>
       </div>
 
-      <button className="place-order-btn" type="submit" disabled={!isFormValid || isSubmitting}>
+      <button className="place-order-btn" type="submit" disabled={!isFormValid || isSubmitting || isBlocked}>
         {isSubmitting ? "Processing..." : "Pay"}
       </button>
+      {disabledReason && <span className="error-text">{disabledReason}</span>}
     </form>
   );
 }
