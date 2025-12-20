@@ -11,6 +11,9 @@ export default function Listings({ items = [], title, variant = "" }) {
   const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
   const navigate = useNavigate();
 
+  // Set to true temporarily to verify image URLs in console
+  const DEBUG_IMAGES = false;
+
   // Use real items if provided
   const displayItems = items.length > 0 ? items : [];
 
@@ -25,7 +28,7 @@ export default function Listings({ items = [], title, variant = "" }) {
         }
 
         const data = await getWishlist();
-        setWishlistIds(data.map(item => item._id));
+        setWishlistIds(data.map((item) => item._id));
       } catch (err) {
         console.error("Failed to fetch wishlist:", err);
       } finally {
@@ -48,7 +51,7 @@ export default function Listings({ items = [], title, variant = "" }) {
     try {
       if (wishlistIds.includes(itemId)) {
         await removeFromWishlist(itemId);
-        setWishlistIds(wishlistIds.filter(id => id !== itemId));
+        setWishlistIds(wishlistIds.filter((id) => id !== itemId));
       } else {
         await addToWishlist(itemId);
         setWishlistIds([...wishlistIds, itemId]);
@@ -62,18 +65,18 @@ export default function Listings({ items = [], title, variant = "" }) {
   const handlePrevImage = (itemId, imageCount, e) => {
     e.preventDefault();
     e.stopPropagation();
-    setCurrentImageIndex(prev => ({
+    setCurrentImageIndex((prev) => ({
       ...prev,
-      [itemId]: prev[itemId] > 0 ? prev[itemId] - 1 : imageCount - 1
+      [itemId]: prev[itemId] > 0 ? prev[itemId] - 1 : imageCount - 1,
     }));
   };
 
   const handleNextImage = (itemId, imageCount, e) => {
     e.preventDefault();
     e.stopPropagation();
-    setCurrentImageIndex(prev => ({
+    setCurrentImageIndex((prev) => ({
       ...prev,
-      [itemId]: prev[itemId] < imageCount - 1 ? prev[itemId] + 1 : 0
+      [itemId]: prev[itemId] < imageCount - 1 ? prev[itemId] + 1 : 0,
     }));
   };
 
@@ -91,77 +94,100 @@ export default function Listings({ items = [], title, variant = "" }) {
 
       <div className="listings-grid">
         {displayItems.map((item) => {
-          // Process images array
+          // ✅ Image helper: supports Cloudinary objects + legacy strings
           const getImageSrc = (img) => {
-            if (!img || typeof img !== 'string') return null;
+            if (!img) return null;
 
-            // If it's already a full URL (http/https), use as-is
-            if (img.startsWith('http://') || img.startsWith('https://')) {
-              return img;
+            // Cloudinary format: { url: "https://..." }
+            if (typeof img === "object" && img.url && typeof img.url === "string") {
+              return img.url;
             }
 
-            // If it's a base64 data URL, use as-is
-            if (img.startsWith('data:')) {
-              return img;
-            }
+            // Legacy string formats
+            if (typeof img !== "string") return null;
 
-            // Handle file paths and filenames
-            if (img.startsWith('/uploads/')) {
-              return `${API_BASE}${img}`;
-            }
+            // Full URL
+            if (img.startsWith("http://") || img.startsWith("https://")) return img;
 
-            // If it's a filename with extension
-            const hasImageExtension = /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(img);
-            if (hasImageExtension || !img.includes('/')) {
-              return `${API_BASE}/uploads/images/${img}`;
-            }
+            // Base64
+            if (img.startsWith("data:")) return img;
 
-            // If it starts with /
-            if (img.startsWith('/')) {
-              return `${API_BASE}${img}`;
-            }
+            // Backend uploads
+            if (img.startsWith("/uploads/")) return `${API_BASE}${img}`;
 
-            // Default: treat as filename
+            // Starts with /
+            if (img.startsWith("/")) return `${API_BASE}${img}`;
+
+            // Filename fallback
             return `${API_BASE}/uploads/images/${img}`;
           };
 
-          const itemImages = item.images && Array.isArray(item.images) ? item.images : [];
+          // ✅ Normalize images (supports item.images as array/object/string + item.image legacy)
+          const rawImages = Array.isArray(item.images)
+            ? item.images
+            : item.images
+            ? [item.images]
+            : item.image
+            ? [item.image]
+            : [];
+
+          // ✅ Final list of resolved URLs
+          const itemImages = rawImages.map(getImageSrc).filter(Boolean);
+
           const currentIndex = currentImageIndex[item._id] || 0;
-          const currentImage = itemImages.length > 0 ? getImageSrc(itemImages[currentIndex]) : null;
+          const currentImage = itemImages.length > 0 ? itemImages[currentIndex] : null;
           const hasMultipleImages = itemImages.length > 1;
 
+          if (DEBUG_IMAGES) {
+            console.log("[Listing Images]", {
+              title: item.title,
+              rawImages: item.images,
+              resolved: itemImages,
+              currentImage,
+            });
+          }
+
           return (
-            <article key={item._id} className="listing-card">
+            <article
+              key={item._id}
+              className="listing-card"
+              onClick={() => navigate(`/listing/${item._id}`)}
+              style={{ cursor: "pointer" }}
+            >
               <div className="listing-image">
                 {currentImage ? (
                   <img
                     src={currentImage}
                     alt={`${item.title} - Image ${currentIndex + 1}`}
                     style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'contain',
-                      display: 'block',
-                      backgroundColor: '#f5f5f5'
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                      display: "block",
+                      backgroundColor: "#f5f5f5",
                     }}
+                    loading="lazy"
                     onError={(e) => {
-                      console.error('Image failed to load:', currentImage, 'for item:', item.title);
-                      e.target.style.display = 'none';
-                      const placeholder = e.target.parentElement.querySelector('.image-placeholder');
-                      if (placeholder) placeholder.style.display = 'flex';
+                      console.error("Image failed to load:", currentImage, "for item:", item.title);
+                      e.currentTarget.style.display = "none";
+                      const placeholder = e.currentTarget.parentElement.querySelector(".image-placeholder");
+                      if (placeholder) placeholder.style.display = "flex";
                     }}
                   />
                 ) : (
-                  <div className="image-placeholder" style={{
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: '#e5e7eb',
-                    color: '#9ca3af',
-                    fontSize: '14px'
-                  }}>
+                  <div
+                    className="image-placeholder"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: "#e5e7eb",
+                      color: "#9ca3af",
+                      fontSize: "14px",
+                    }}
+                  >
                     No Image
                   </div>
                 )}
@@ -191,11 +217,7 @@ export default function Listings({ items = [], title, variant = "" }) {
                 )}
 
                 {/* Image Counter */}
-                {hasMultipleImages && (
-                  <div className="image-counter">
-                    {currentIndex + 1} / {itemImages.length}
-                  </div>
-                )}
+                {hasMultipleImages && <div className="image-counter">{currentIndex + 1} / {itemImages.length}</div>}
 
                 {/* Favorite Button */}
                 <button
@@ -223,14 +245,10 @@ export default function Listings({ items = [], title, variant = "" }) {
 
               <div className="listing-body">
                 <h3 className="listing-title">{item.title}</h3>
-                <p className="listing-price">EGP {item.price.toLocaleString()}</p>
+                <p className="listing-price">EGP {Number(item.price || 0).toLocaleString()}</p>
                 <div className="listing-meta">
-                  <span className="listing-Category">
-                    {item.category || "Category"}
-                  </span>
-                  <span className="listing-time">
-                    {item.deliveryEstimate || "Available"}
-                  </span>
+                  <span className="listing-Category">{item.category || "Category"}</span>
+                  <span className="listing-time">{item.deliveryEstimate || "Available"}</span>
                 </div>
               </div>
             </article>

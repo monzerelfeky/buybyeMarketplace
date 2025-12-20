@@ -107,9 +107,6 @@ export default function Hero() {
             )}
           </div>
 
-          <p className="hero-hint">
-            Popular: iPhone 15 • Toyota Camry • Studio Apartment • MacBook Pro
-          </p>
         </div>
       </div>
     </section>
