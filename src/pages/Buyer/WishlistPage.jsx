@@ -10,7 +10,7 @@ import {
   removeFromLocalWishlist 
 } from "../../utils/wishlist";
 import "../../styles/HomePage.css";
-import "../../styles/Listings.css";   // ✅ important: brings image-nav-btn styles
+import "../../styles/Listings.css";
 import "../../styles/Wishlist.css";
 
 export default function WishlistPage() {
@@ -19,9 +19,6 @@ export default function WishlistPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState({});
   const navigate = useNavigate();
-
-  // ✅ Same approach as Listings.jsx
-  const [currentImageIndex, setCurrentImageIndex] = useState({}); // { [itemId]: number }
 
   const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
@@ -72,7 +69,6 @@ export default function WishlistPage() {
   }, []);
 
   const handleRemove = async (itemId, e) => {
-    e.preventDefault();
     e.stopPropagation();
     
     const token = localStorage.getItem("authToken");
@@ -84,11 +80,6 @@ export default function WishlistPage() {
         removeFromLocalWishlist(itemId);
       }
       setWishlistItems((prev) => prev.filter((item) => item._id !== itemId));
-      setCurrentImageIndex((prev) => {
-        const copy = { ...prev };
-        delete copy[itemId];
-        return copy;
-      });
     } catch (err) {
       console.error("Failed to remove from wishlist:", err);
     }
@@ -160,7 +151,8 @@ export default function WishlistPage() {
               <h1 className="wishlist-main-title">Your Wishlist</h1>
               {wishlistItems.length > 0 && (
                 <p className="wishlist-count">
-                  {wishlistItems.length} {wishlistItems.length === 1 ? "item" : "items"} saved
+                  {wishlistItems.length}{" "}
+                  {wishlistItems.length === 1 ? "item" : "items"} saved
                 </p>
               )}
               {!isLoggedIn && wishlistItems.length > 0 && (
@@ -169,6 +161,19 @@ export default function WishlistPage() {
                 </p>
               )}
             </div>
+            <Link to="/" className="wishlist-back-link">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+              Back to Home
+            </Link>
           </div>
         </div>
 
