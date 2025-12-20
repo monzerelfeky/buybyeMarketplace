@@ -3,75 +3,104 @@ import React, { useState } from "react";
 import "../../styles/seller/createItem.css";
 
 export default function CreateItemContent({ onSave, onClose }) {
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [quantity, setQuantity] = useState("");
   const [category, setCategory] = useState("Electronics");
   const [deliveryEstimate, setDeliveryEstimate] = useState("5-7 days");
+
+  // ✅ Now stores File objects (not base64)
   const [images, setImages] = useState([]);
 
-  // Helper: file → base64 Promise
-  const fileToBase64 = (file) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () =>
-        resolve(reader.result); // base64 string
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleImageUpload = async (e) => {
+  const handleImageUpload = (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
-    // Optional: limit to 10 total
+    // limit to 10 total
     const remainingSlots = 10 - images.length;
-    const toRead = files.slice(0, remainingSlots);
+    const selected = files.slice(0, remainingSlots);
 
-    const base64s = await Promise.all(
-      toRead.map((file) => fileToBase64(file))
-    );
+    setImages((prev) => [...prev, ...selected]);
 
-    const newImages = base64s.map((base64) => ({
-      id: Math.random().toString(36).slice(2),
-      base64,
-    }));
-
-    setImages((prev) => [...prev, ...newImages]);
+    // allow selecting same file again later
+    e.target.value = "";
   };
 
-  const handleRemoveImage = (id) => {
-    setImages((prev) => prev.filter((img) => img.id !== id));
+  const handleRemoveImage = (index) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e) => {
+  // ✅ Upload selected files to your backend -> backend uploads to Cloudinary
+  const uploadImagesToCloudinary = async (files) => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append("images", file));
+
+    const res = await fetch(`${API_BASE}/api/upload/listing-images`, {
+      method: "POST",
+      body: formData,
+      // ⚠️ do NOT set Content-Type manually; browser will set boundary correctly
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      const msg = data?.message || "Image upload failed";
+      throw new Error(msg);
+    }
+
+    // Expect: { images: [{ url, publicId, ... }] }
+    return Array.isArray(data?.images) ? data.images : [];
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
 
-  // Convert image objects to base64 strings for backend
-  const imageStrings = images.map(img => img.base64).filter(b64 => b64);
+    try {
+      setSubmitting(true);
 
-    // Normalize and round price to two decimals to avoid floating-point drift
-    const normalizedPrice = Number.isFinite(Number(price)) ? Math.round(Number(price) * 100) / 100 : 0;
+      // 1) Upload images first (if any)
+      const uploadedImages = images.length ? await uploadImagesToCloudinary(images) : [];
 
+      // 2) Normalize price & quantity
+      const normalizedPrice = Number.isFinite(Number(price))
+        ? Math.round(Number(price) * 100) / 100
+        : 0;
+
+      const normalizedQty = Number.isFinite(Number(quantity)) ? Number(quantity) : 0;
+
+      // 3) Build item payload that will be saved in MongoDB
       const newItem = {
-      seller: localStorage.getItem("userId"), // or parsed user._id
-      title,
-      description,
-      price: normalizedPrice,
-      category,
-      deliveryEstimate,
-      isActive: true,
-      images: imageStrings
-    };
+        seller: localStorage.getItem("userId"),
+        title,
+        description,
+        price: normalizedPrice,
+        quantity: normalizedQty,
+        category,
+        deliveryEstimate,
+        isActive: true,
 
+        // ✅ THIS is what your DB should store now
+        // e.g. [{ url: "https://res.cloudinary.com/..." , publicId: "..." }]
+        images: uploadedImages,
+      };
 
-onSave?.(newItem);
-onClose?.();
+      // 4) Save item (your parent component should POST to /api/items)
+      await onSave?.(newItem);
 
-
-    // Pass item with images to context
-    onSave?.(newItem, images);
-    onClose?.();
+      // 5) Close
+      onClose?.();
+    } catch (err) {
+      console.error("Create item failed:", err);
+      alert(err.message || "Failed to create item. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -108,10 +137,10 @@ onClose?.();
           />
         </div>
 
-        {/* Price + Category */}
+        {/* Price + Quantity */}
         <div className="ci-row">
           <div className="ci-field half">
-            <label className="ci-label">Price ($)</label>
+            <label className="ci-label">Price (EGP)</label>
             <input
               type="number"
               min="0"
@@ -125,6 +154,23 @@ onClose?.();
           </div>
 
           <div className="ci-field half">
+            <label className="ci-label">Quantity</label>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              className="ci-input"
+              placeholder="0"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              required
+            />
+          </div>
+        </div>
+
+        {/* Category */}
+        <div className="ci-row">
+          <div className="ci-field half">
             <label className="ci-label">Category</label>
             <select
               className="ci-input"
@@ -132,11 +178,9 @@ onClose?.();
               onChange={(e) => setCategory(e.target.value)}
             >
               <option>Electronics</option>
-              <option>Vehicles</option>
-              <option>Fashion</option>
+              <option>Cars</option>
               <option>Home & Garden</option>
-              <option>Sports</option>
-              <option>Other</option>
+              <option>Sports & fitness</option>
             </select>
           </div>
         </div>
@@ -165,26 +209,27 @@ onClose?.();
               accept="image/*"
               className="ci-file-input"
               onChange={handleImageUpload}
+              disabled={submitting}
             />
             <label className="ci-upload-label">
               <span className="ci-upload-icon">📸</span>
               <p className="ci-upload-hint">
-                Click to browse or drag &amp; drop (up to 10 photos)
+                Click to browse (up to 10 photos)
               </p>
             </label>
           </div>
 
-        
           {/* IMAGE PREVIEW GRID */}
           {images.length > 0 && (
             <div className="ci-preview-grid">
-              {images.map((img) => (
-                <div key={img.id} className="ci-preview-img">
-                  <img src={img.base64} alt="preview" />
+              {images.map((file, idx) => (
+                <div key={`${file.name}-${file.size}-${idx}`} className="ci-preview-img">
+                  <img src={URL.createObjectURL(file)} alt="preview" />
                   <button
                     type="button"
                     className="ci-remove-img"
-                    onClick={() => handleRemoveImage(img.id)}
+                    onClick={() => handleRemoveImage(idx)}
+                    disabled={submitting}
                   >
                     ✖
                   </button>
@@ -196,8 +241,8 @@ onClose?.();
 
         {/* Submit */}
         <div className="ci-actions">
-          <button type="submit" className="ci-btn primary">
-            Create Item
+          <button type="submit" className="ci-btn primary" disabled={submitting}>
+            {submitting ? "Creating..." : "Create Item"}
           </button>
         </div>
       </form>

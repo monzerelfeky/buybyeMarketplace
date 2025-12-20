@@ -13,13 +13,15 @@ export default function Hero() {
 
   // Debounced search effect
   useEffect(() => {
-    if (!query.trim()) {
+    const trimmed = query.trim();
+    if (!trimmed) {
       setSuggestions([]);
+      setShowSuggestions(false);
       return;
     }
 
     const timeout = setTimeout(() => {
-      runSearch(query);
+      runSearch(trimmed);
     }, 150);
 
     return () => clearTimeout(timeout);
@@ -42,15 +44,17 @@ export default function Hero() {
 
   // Navigate to search page
   const handleSearch = () => {
-    if (!query.trim()) return;
-    navigate(`/category/all?query=${encodeURIComponent(query)}`);
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    navigate(`/category/all?query=${encodeURIComponent(trimmed)}`);
   };
 
   // Select suggestion — navigate + fill input
   const handleSelectSuggestion = (value) => {
-    setQuery(value);
+    const trimmed = value.trim();
+    setQuery(trimmed);
     setShowSuggestions(false);
-    navigate(`/category/all?query=${encodeURIComponent(value)}`);
+    navigate(`/category/all?query=${encodeURIComponent(trimmed)}`);
   };
 
   // Press Enter to search
@@ -103,9 +107,6 @@ export default function Hero() {
             )}
           </div>
 
-          <p className="hero-hint">
-            Popular: iPhone 15 • Toyota Camry • Studio Apartment • MacBook Pro
-          </p>
         </div>
       </div>
     </section>

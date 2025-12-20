@@ -14,6 +14,7 @@ import { useSeller } from "../../context/SellerContext";
 
 export default function SellerItems() {
   const { items, updateItem, deleteItem, toggleItemStatus } = useSeller();
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
   const [editOpen, setEditOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -36,7 +37,9 @@ export default function SellerItems() {
   };
 
   const handleEditSave = (updated) => {
-    updateItem(updated.id, updated);
+    // Support both id and _id
+    const id = updated?._id || updated?.id;
+    updateItem(id, updated);
     setEditOpen(false);
   };
 
@@ -48,6 +51,35 @@ export default function SellerItems() {
     if (window.confirm("Delete this item? This action cannot be undone.")) {
       deleteItem(itemId);
     }
+  };
+
+  /* -----------------------------
+        IMAGE HELPERS
+  ----------------------------- */
+
+  const resolveImageUrl = (img) => {
+    if (!img) return null;
+
+    // Cloudinary object: { url: "https://..." }
+    if (typeof img === "object" && typeof img.url === "string") return img.url;
+
+    // string formats
+    if (typeof img !== "string") return null;
+
+    // Full URL
+    if (img.startsWith("http://") || img.startsWith("https://")) return img;
+
+    // Base64 (legacy)
+    if (img.startsWith("data:")) return img;
+
+    // Local uploads served by backend
+    if (img.startsWith("/uploads/")) return `${API_BASE}${img}`;
+
+    // Any other absolute path
+    if (img.startsWith("/")) return `${API_BASE}${img}`;
+
+    // Filename fallback
+    return `${API_BASE}/uploads/images/${img}`;
   };
 
   /* -----------------------------
@@ -68,6 +100,18 @@ export default function SellerItems() {
     setImageIndexById((prev) => ({ ...prev, [itemId]: index }));
   };
 
+  const getImageSrc = (img) => {
+    if (!img || typeof img !== "string") return null;
+    if (img.startsWith("http://") || img.startsWith("https://")) return img;
+    if (img.startsWith("data:")) return img;
+    if (img.includes("uploads/images/")) {
+      const filename = img.split("uploads/images/").pop();
+      return `${API_BASE}/uploads/images/${filename}`;
+    }
+    if (img.startsWith("/")) return `${API_BASE}${img}`;
+    return `${API_BASE}/uploads/images/${img}`;
+  };
+
   /* -----------------------------
         FILTER + SORT + SEARCH
   ----------------------------- */
@@ -84,17 +128,27 @@ export default function SellerItems() {
       return matchesSearch && matchesCategory;
     });
 
+    // Sort
     if (sortBy === "newest") {
-      arr = [...arr].sort((a, b) => b.id - a.id);
+      // Prefer createdAt (real Mongo), fallback to _id, fallback to id
+      arr = [...arr].sort((a, b) => {
+        const aT = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bT = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        if (aT !== bT) return bT - aT;
+
+        const aKey = String(a._id || a.id || "");
+        const bKey = String(b._id || b.id || "");
+        return bKey.localeCompare(aKey);
+      });
     }
     if (sortBy === "price-low") {
-      arr = [...arr].sort((a, b) => a.price - b.price);
+      arr = [...arr].sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
     }
     if (sortBy === "price-high") {
-      arr = [...arr].sort((a, b) => b.price - a.price);
+      arr = [...arr].sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
     }
     if (sortBy === "az") {
-      arr = [...arr].sort((a, b) => a.title.localeCompare(b.title));
+      arr = [...arr].sort((a, b) => (a.title || "").localeCompare(b.title || ""));
     }
 
     return arr;
@@ -105,7 +159,6 @@ export default function SellerItems() {
       <Header />
 
       <div className="page-container">
-
         {/* ============================
              TOP BAR: Search / Category / Sort / View
         ============================ */}
@@ -179,31 +232,39 @@ export default function SellerItems() {
              ITEMS
         ============================ */}
         <div className={view === "grid" ? "items-grid" : "items-list"}>
-          {filteredItems.length === 0 && (
-            <p className="empty-state">No items found.</p>
-          )}
+          {filteredItems.length === 0 && <p className="empty-state">No items found.</p>}
 
           {filteredItems.map((item) => {
-            // Display images from DB (images should be URLs or filenames)
-            const images = (item.images && item.images.length > 0) 
-              ? item.images.map((img, idx) => ({ id: idx, base64: img, url: img }))
+            const itemId = item._id || item.id; // ✅ support both
+
+            // ✅ Normalize images to URLs
+            const images = Array.isArray(item.images)
+              ? item.images
+                  .map((img, idx) => {
+                    const url = resolveImageUrl(img);
+                    return url ? { id: `${itemId}-${idx}`, url } : null;
+                  })
+                  .filter(Boolean)
               : [];
+
             const hasImages = images.length > 0;
-            const currentIndexRaw = imageIndexById[item.id] ?? 0;
+
+            const currentIndexRaw = imageIndexById[itemId] ?? 0;
             const safeIndex =
-              currentIndexRaw >= 0 && currentIndexRaw < images.length
-                ? currentIndexRaw
-                : 0;
+              currentIndexRaw >= 0 && currentIndexRaw < images.length ? currentIndexRaw : 0;
+
             const currentImage = hasImages ? images[safeIndex] : null;
-            const imageSrc =
-              currentImage?.base64 || currentImage?.url || undefined;
+            const imageSrc = currentImage?.url;
+
+            const isActive =
+              typeof item.isActive === "boolean"
+                ? item.isActive
+                : item.status === "active";
 
             return (
               <div
-                key={item.id}
-                className={`item-card ${
-                  view === "list" ? "list-view" : "grid-view"
-                }`}
+                key={itemId}
+                className={`item-card ${view === "list" ? "list-view" : "grid-view"}`}
               >
                 {/* Thumbnail / Carousel */}
                 <div className="item-img-wrapper">
@@ -213,6 +274,11 @@ export default function SellerItems() {
                         src={imageSrc}
                         alt={item.title}
                         className="item-img thumb"
+                        loading="lazy"
+                        onError={(e) => {
+                          console.error("Failed to load image:", imageSrc, "item:", item.title);
+                          e.currentTarget.style.display = "none";
+                        }}
                       />
 
                       {images.length > 1 && (
@@ -220,18 +286,14 @@ export default function SellerItems() {
                           <button
                             type="button"
                             className="item-img-nav left"
-                            onClick={() =>
-                              stepImage(item.id, images.length, -1)
-                            }
+                            onClick={() => stepImage(itemId, images.length, -1)}
                           >
                             ‹
                           </button>
                           <button
                             type="button"
                             className="item-img-nav right"
-                            onClick={() =>
-                              stepImage(item.id, images.length, 1)
-                            }
+                            onClick={() => stepImage(itemId, images.length, 1)}
                           >
                             ›
                           </button>
@@ -241,10 +303,8 @@ export default function SellerItems() {
                               <button
                                 key={img.id || idx}
                                 type="button"
-                                className={`item-img-dot ${
-                                  idx === safeIndex ? "active" : ""
-                                }`}
-                                onClick={() => goToImage(item.id, idx)}
+                                className={`item-img-dot ${idx === safeIndex ? "active" : ""}`}
+                                onClick={() => goToImage(itemId, idx)}
                               />
                             ))}
                           </div>
@@ -252,7 +312,6 @@ export default function SellerItems() {
                       )}
                     </>
                   ) : (
-                    // Placeholder when no images
                     <div className="item-img thumb item-img-placeholder">
                       <span>No Image</span>
                     </div>
@@ -262,11 +321,11 @@ export default function SellerItems() {
                 {/* Info */}
                 <div className="item-info">
                   <h3 className="item-title">{item.title}</h3>
-                  <p className="item-price">${(Number(item.price) || 0).toFixed(2)}</p>
+                  <p className="item-price">EGP {(Number(item.price) || 0).toLocaleString()}</p>
 
                   {view === "list" && (
                     <div className="item-status">
-                      Status: {(typeof item.isActive === 'boolean' ? (item.isActive ? 'Active' : 'Inactive') : (item.status === 'active' ? 'Active' : 'Inactive'))}
+                      Status: {isActive ? "Active" : "Inactive"}
                     </div>
                   )}
                 </div>
@@ -275,29 +334,20 @@ export default function SellerItems() {
                 <div className="item-right">
                   {view === "grid" && (
                     <div className="item-status">
-                      Status: {(typeof item.isActive === 'boolean' ? (item.isActive ? 'Active' : 'Inactive') : (item.status === 'active' ? 'Active' : 'Inactive'))}
+                      Status: {isActive ? "Active" : "Inactive"}
                     </div>
                   )}
 
                   <div className="item-actions">
-                    <button
-                      className="item-btn edit"
-                      onClick={() => handleEditClick(item)}
-                    >
+                    <button className="item-btn edit" onClick={() => handleEditClick(item)}>
                       Edit
                     </button>
 
-                    <button
-                      className="item-btn deactivate"
-                      onClick={() => handleDeactivate(item.id)}
-                    >
-                      {(typeof item.isActive === 'boolean' ? (item.isActive ? 'Deactivate' : 'Activate') : (item.status === 'active' ? 'Deactivate' : 'Activate'))}
+                    <button className="item-btn deactivate" onClick={() => handleDeactivate(itemId)}>
+                      {isActive ? "Deactivate" : "Activate"}
                     </button>
 
-                    <button
-                      className="item-btn delete"
-                      onClick={() => handleDelete(item.id)}
-                    >
+                    <button className="item-btn delete" onClick={() => handleDelete(itemId)}>
                       Delete
                     </button>
                   </div>
@@ -309,11 +359,7 @@ export default function SellerItems() {
       </div>
 
       {/* EDIT MODAL */}
-      <UniversalModal
-        isOpen={editOpen}
-        onClose={() => setEditOpen(false)}
-        type="create-item"
-      >
+      <UniversalModal isOpen={editOpen} onClose={() => setEditOpen(false)} type="create-item">
         {selectedItem && (
           <EditItemContent
             item={selectedItem}

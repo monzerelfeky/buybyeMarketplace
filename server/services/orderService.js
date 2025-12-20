@@ -13,7 +13,7 @@ async function transformOrder(order) {
     .map((i) => i.itemId || i.productId || i._id || i.id)
     .filter(Boolean);
   const dbItems = itemIds.length
-    ? await Item.find({ _id: { $in: itemIds } }).select('price title')
+    ? await Item.find({ _id: { $in: itemIds } }).select('price title images image')
     : [];
   const dbIndex = new Map(dbItems.map((d) => [d._id.toString(), d]));
 
@@ -75,6 +75,8 @@ async function transformOrder(order) {
       price: priceAtOrder,
       priceAtOrder,
       priceFromDb,
+      images: match?.images || itm.images,
+      image: match?.image || itm.image,
       quantity: qty,
     };
   });

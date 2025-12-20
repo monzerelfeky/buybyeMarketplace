@@ -70,6 +70,8 @@ import OrderTrackingPage from "./pages/OrderTrackingPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import SellerNotificationsPage from "./pages/SellerNotificationsPage";
 
+
+
 export default function App() {
   return (
     <SellerProvider>
@@ -132,13 +134,15 @@ export default function App() {
         <Route path="/order-history" element={<OrderHistoryPage />} />
 
         {/*Report Seller Route*/}
-        <Route path="/report-seller/:sellerId" element={<ReportSeller />} />
+        <Route path="/report-seller/:orderId" element={<ReportSeller />} />
 
         {/*Order Tracking Route*/}
         <Route path="/order-tracking/:orderId" element={<OrderTrackingPage />} />
 
         {/*Notifications Route*/}
         <Route path="/notifications" element={<NotificationsPage />} />
+
+
       </Routes>
     </SellerProvider>
   );

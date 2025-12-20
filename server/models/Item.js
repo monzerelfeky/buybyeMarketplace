@@ -8,7 +8,8 @@ const ItemSchema = new Schema({
   price: { type: Number, min: 0, required: true },
   category: String,
   deliveryEstimate: String,
-  images: [String],
+  images: [{ url: String }]
+,
   quantity: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true },
   averageRating: { type: Number, default: 0 },

@@ -39,6 +39,8 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/sellers', sellersRoutes);
 app.use("/api/wishlist", authMiddleware, wishlistRoutes);
+app.use("/api/upload", require("./routes/uploadRoutes"));
+
 
 app.get('/', (req, res) => res.send('Marketplace API'));
 
@@ -55,3 +57,8 @@ start().catch((err) => {
   console.error(err);
   process.exit(1);
 });
+const cloudinary = require("./config/cloudinary");
+
+cloudinary.api.ping()
+  .then(res => console.log("Cloudinary OK:", res))
+  .catch(err => console.error("Cloudinary ERROR:", err));
