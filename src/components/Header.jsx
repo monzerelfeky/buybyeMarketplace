@@ -28,6 +28,7 @@
 
     const { addItem, refresh } = useSeller();
     const isCartPage = location.pathname === "/cart";
+    const isCheckoutPage = location.pathname === "/checkout";
 
     // Check if user is logged in (re-evaluates when authRefresh changes)
     const isLoggedIn = !!localStorage.getItem('authToken');
@@ -223,7 +224,7 @@
                   Post Ad
                 </button>
 
-                {isLoggedIn && !isCartPage && (
+                {isLoggedIn && !isCartPage && !isCheckoutPage && (
                   <>
                     <button className="cart-btn" onClick={() => setIsCartOpen(true)}>
                       <FiShoppingBag className="cart-icon" />
