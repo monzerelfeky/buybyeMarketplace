@@ -12,6 +12,7 @@ export default function ProductPage() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+  const [quantityInput, setQuantityInput] = useState("1");
   const [isWishlisted, setIsWishlisted] = useState(false);
 
   useEffect(() => {
@@ -36,13 +37,41 @@ export default function ProductPage() {
   }, [productId]);
 
   const maxQty = product?.quantity ?? 1;
-  const increaseQty = () => setQuantity((q) => Math.min(q + 1, maxQty));
-  const decreaseQty = () => setQuantity((q) => (q > 1 ? q - 1 : 1));
+  useEffect(() => {
+    const next = Math.max(1, Math.min(quantity, maxQty));
+    setQuantity(next);
+    setQuantityInput(String(next));
+  }, [maxQty]);
+
+  const increaseQty = () => {
+    setQuantity((q) => {
+      const next = Math.min(q + 1, maxQty);
+      setQuantityInput(String(next));
+      return next;
+    });
+  };
+  const decreaseQty = () => {
+    setQuantity((q) => {
+      const next = q > 1 ? q - 1 : 1;
+      setQuantityInput(String(next));
+      return next;
+    });
+  };
   const handleQtyChange = (e) => {
-    const next = Number(e.target.value);
-    if (!Number.isFinite(next)) return;
-    const clamped = Math.max(1, Math.min(next, maxQty));
-    setQuantity(clamped);
+    const value = e.target.value;
+    if (value === "") {
+      setQuantityInput("");
+      return;
+    }
+    if (!/^\d+$/.test(value)) return;
+    setQuantityInput(value);
+  };
+
+  const commitQtyInput = () => {
+    const parsed = Number(quantityInput);
+    const next = Number.isFinite(parsed) ? Math.max(1, Math.min(parsed, maxQty)) : 1;
+    setQuantity(next);
+    setQuantityInput(String(next));
   };
 
   const handleAddToCart = () => {
@@ -161,8 +190,15 @@ export default function ProductPage() {
                       min="1"
                       max={maxQty}
                       className="quantity-display"
-                      value={quantity}
+                      value={quantityInput}
                       onChange={handleQtyChange}
+                      onBlur={commitQtyInput}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          commitQtyInput();
+                        }
+                      }}
                     />
                     <button
                       onClick={increaseQty}

@@ -27,6 +27,7 @@
     const navigate = useNavigate();
 
     const { addItem, refresh } = useSeller();
+    const isCartPage = location.pathname === "/cart";
 
     // Check if user is logged in (re-evaluates when authRefresh changes)
     const isLoggedIn = !!localStorage.getItem('authToken');
@@ -222,7 +223,7 @@
                   Post Ad
                 </button>
 
-                {isLoggedIn && (
+                {isLoggedIn && !isCartPage && (
                   <>
                     <button className="cart-btn" onClick={() => setIsCartOpen(true)}>
                       <FiShoppingBag className="cart-icon" />
@@ -402,10 +403,12 @@
           />
         </UniversalModal>
 
-        <CartPanel 
-          isOpen={isCartOpen}
-          onClose={() => setIsCartOpen(false)}
-        />
+        {!isCartPage && (
+          <CartPanel 
+            isOpen={isCartOpen}
+            onClose={() => setIsCartOpen(false)}
+          />
+        )}
       </>
     );
   }

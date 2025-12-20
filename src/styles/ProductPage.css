@@ -1,10 +1,17 @@
 .product-page {
+  --ink: #0f172a;
+  --muted: #556070;
+  --paper: #ffffff;
+  --accent: #1d4ed8;
+  --accent-dark: #1e40af;
   padding: 2rem;
   padding-top: calc(2rem + 170px);
   max-width: 1400px;
   margin: 0 auto;
   min-height: calc(100vh - 170px - 380px);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  background: radial-gradient(circle at 10% 10%, #ffffff 0%, #f5f7fb 45%, #f7f9fc 100%);
+  color: var(--ink);
 }
 
 .loading-container {
@@ -40,17 +47,18 @@
 .product-container {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 3rem;
+  gap: 2.5rem;
   align-items: start;
 }
 
 .img-gallery {
   position: sticky;
   top: calc(170px + 2rem);
-  background: #f8f9fa;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background: linear-gradient(160deg, #f8fafc, #eef2f7);
+  border-radius: 20px;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
   aspect-ratio: 1;
   display: flex;
   align-items: center;
@@ -62,13 +70,20 @@
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  border-radius: 8px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 12px 25px rgba(15, 23, 42, 0.1);
 }
 
 .product-content {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
+  background: var(--paper);
+  border-radius: 20px;
+  padding: 2rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.06);
 }
 
 .product-header {
@@ -79,9 +94,9 @@
 }
 
 .product-title {
-  font-size: 2rem;
+  font-size: 2.2rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--ink);
   margin: 0;
   line-height: 1.2;
   flex: 1;
@@ -89,10 +104,10 @@
 
 .wishlist-btn {
   background: transparent;
-  border: 2px solid #e0e0e0;
-  border-radius: 50%;
-  width: 48px;
-  height: 48px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  width: 46px;
+  height: 46px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -102,8 +117,8 @@
 }
 
 .wishlist-btn:hover {
-  border-color: #464646;
-  background: #fff5f5;
+  border-color: #d1d9e6;
+  background: #f5f7fb;
 }
 
 .heart-icon {
@@ -122,16 +137,16 @@
 }
 
 .product-price {
-  font-size: 2rem;
+  font-size: 2.1rem;
   font-weight: 700;
-  color: #007bff;
+  color: var(--accent);
   margin: 0;
 }
 
 .stock-badge {
   display: inline-block;
   padding: 0.5rem 1rem;
-  border-radius: 6px;
+  border-radius: 999px;
   font-size: 0.875rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -139,26 +154,26 @@
 }
 
 .stock-badge.in-stock {
-  background: #d4edda;
-  color: #155724;
+  background: #e0ecff;
+  color: #1d4ed8;
 }
 
 .stock-badge.out-of-stock {
-  background: #f8d7da;
-  color: #721c24;
+  background: #fdecec;
+  color: #a61b1b;
 }
 
 .product-description {
   font-size: 1rem;
   line-height: 1.6;
-  color: #555;
+  color: var(--muted);
   margin: 0;
 }
 
 .purchase-section {
   margin-top: 1rem;
-  padding-top: 2rem;
-  border-top: 2px solid #e0e0e0;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -179,11 +194,11 @@
   display: flex;
   align-items: center;
   gap: 0;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
   overflow: hidden;
   background: #fff;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
 }
 
 .quantity-buttons button {
@@ -195,7 +210,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: #333;
+  color: var(--ink);
 }
 
 .quantity-buttons button:hover:not(:disabled) {
@@ -219,8 +234,8 @@
   font-size: 1.05rem;
   padding: 0 0.5rem;
   border: none;
-  border-left: 2px solid #e0e0e0;
-  border-right: 2px solid #e0e0e0;
+  border-left: 1px solid #e5e7eb;
+  border-right: 1px solid #e5e7eb;
   background: #f8fafc;
   color: #111827;
 }
@@ -251,7 +266,7 @@
   font-size: 1rem;
   font-weight: 600;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -262,12 +277,12 @@
 }
 
 .btn-primary {
-  background: #1d4ed8;
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
   color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #1d4ed8;
+  background: linear-gradient(135deg, #2a5cf0, #1e40af);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
@@ -285,9 +300,9 @@
 .AI-container {
   margin-top: 2rem;
   padding: 1.5rem;
-  background: #f8f9fa;
-  border-radius: 12px;
-  border: 2px solid #e0e0e0;
+  background: #f1f5f9;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -304,10 +319,10 @@
 
 .AI-container button {
   padding: 0.75rem 1.5rem;
-  background: #007bff;
+  background: #1d4ed8;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -317,9 +332,9 @@
 }
 
 .AI-container button:hover {
-  background: #007bff;
+  background: #1e40af;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.2);
 }
 
 .AI-container button:active {

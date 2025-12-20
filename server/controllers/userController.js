@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Item = require('../models/Item');
 
 function parseIndex(param) {
   const idx = Number(param);
@@ -370,6 +371,123 @@ exports.getUserById = async (req, res) => {
     const user = await User.findById(req.params.id).select('name'); // just return name/email
     if (!user) return res.status(404).json({ message: 'User not found' });
     return res.json(user);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Cart
+exports.getCart = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('cart').populate('cart.itemId');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    return res.json(user.cart || []);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.addToCart = async (req, res) => {
+  try {
+    const { itemId, quantity = 1 } = req.body;
+    if (!itemId) return res.status(400).json({ message: 'itemId is required' });
+    const qty = Number(quantity) || 1;
+    if (qty < 1) return res.status(400).json({ message: 'quantity must be >= 1' });
+
+    const item = await Item.findById(itemId).select('quantity');
+    if (!item) return res.status(404).json({ message: 'Item not found' });
+
+    const user = await User.findById(req.user.id).select('cart updatedAt');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const existing = user.cart.find((entry) => String(entry.itemId) === String(itemId));
+    if (existing) {
+      const nextQty = (Number(existing.quantity) || 0) + qty;
+      if (nextQty > item.quantity) {
+        return res.status(400).json({ message: 'Quantity exceeds available stock' });
+      }
+      existing.quantity = nextQty;
+    } else {
+      if (qty > item.quantity) {
+        return res.status(400).json({ message: 'Quantity exceeds available stock' });
+      }
+      user.cart.push({ itemId, quantity: qty, addedAt: new Date() });
+    }
+
+    user.updatedAt = new Date();
+    await user.save();
+    await user.populate('cart.itemId');
+    return res.status(201).json(user.cart || []);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.updateCartItem = async (req, res) => {
+  try {
+    const { itemId, quantity } = req.body;
+    if (!itemId) return res.status(400).json({ message: 'itemId is required' });
+    const qty = Number(quantity);
+    if (!Number.isFinite(qty)) return res.status(400).json({ message: 'quantity must be a number' });
+
+    const item = await Item.findById(itemId).select('quantity');
+    if (!item) return res.status(404).json({ message: 'Item not found' });
+
+    const user = await User.findById(req.user.id).select('cart updatedAt');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const idx = user.cart.findIndex((entry) => String(entry.itemId) === String(itemId));
+    if (idx === -1) return res.status(404).json({ message: 'Item not in cart' });
+
+    if (qty <= 0) {
+      user.cart.splice(idx, 1);
+    } else {
+      if (qty > item.quantity) {
+        return res.status(400).json({ message: 'Quantity exceeds available stock' });
+      }
+      user.cart[idx].quantity = qty;
+    }
+
+    user.updatedAt = new Date();
+    await user.save();
+    await user.populate('cart.itemId');
+    return res.json(user.cart || []);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.removeCartItem = async (req, res) => {
+  try {
+    const { itemId } = req.params;
+    if (!itemId) return res.status(400).json({ message: 'itemId is required' });
+
+    const user = await User.findById(req.user.id).select('cart updatedAt');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    user.cart = (user.cart || []).filter((entry) => String(entry.itemId) !== String(itemId));
+    user.updatedAt = new Date();
+    await user.save();
+    await user.populate('cart.itemId');
+    return res.json(user.cart || []);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.clearCart = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('cart updatedAt');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    user.cart = [];
+    user.updatedAt = new Date();
+    await user.save();
+    return res.json([]);
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });

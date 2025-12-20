@@ -1,4 +1,5 @@
 const Order = require('../models/Order');
+const Item = require('../models/Item');
 const {
   transformOrder,
   buildItemSnapshots,
@@ -46,6 +47,31 @@ exports.createOrder = async (req, res) => {
 
     const itemsSnapshot = await buildItemSnapshots(items);
     const totalPrice = computeTotal(itemsSnapshot);
+
+    const updatedItems = [];
+    try {
+      for (const entry of itemsSnapshot) {
+        const itemId = entry.itemId;
+        const qty = Number(entry.quantity) || 0;
+        if (!itemId || qty < 1) {
+          throw new Error('Invalid item payload');
+        }
+        const updated = await Item.findOneAndUpdate(
+          { _id: itemId, quantity: { $gte: qty } },
+          { $inc: { quantity: -qty } },
+          { new: true }
+        ).select('_id quantity');
+        if (!updated) {
+          throw new Error('Insufficient stock');
+        }
+        updatedItems.push({ itemId, qty });
+      }
+    } catch (err) {
+      for (const entry of updatedItems) {
+        await Item.updateOne({ _id: entry.itemId }, { $inc: { quantity: entry.qty } });
+      }
+      return res.status(400).json({ message: err.message || 'Insufficient stock' });
+    }
 
     const order = await Order.create({
       buyerId,
