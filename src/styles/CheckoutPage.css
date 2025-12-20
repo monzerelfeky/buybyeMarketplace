@@ -104,54 +104,6 @@
     cursor: pointer;
 }
 
-/* --- Serviceability --- */
-.serviceability-status {
-    margin-top: 12px;
-    padding: 12px;
-    border-radius: 10px;
-    background: #f8f9fa;
-    border: 1px solid #e5e7eb;
-}
-
-.serviceability-title {
-    font-size: 14px;
-    font-weight: 600;
-    margin: 0 0 6px;
-    color: #111827;
-}
-
-.serviceability-note {
-    margin: 0;
-    font-size: 13px;
-    color: #6b7280;
-}
-
-.serviceability-ok {
-    margin: 0;
-    font-size: 13px;
-    color: #15803d;
-    font-weight: 600;
-}
-
-.serviceability-blocked {
-    font-size: 13px;
-    color: #b91c1c;
-}
-
-.serviceability-blocked p {
-    margin: 0 0 6px;
-    font-weight: 600;
-}
-
-.serviceability-blocked ul {
-    margin: 0;
-    padding-left: 18px;
-}
-
-.serviceability-blocked li {
-    margin-bottom: 4px;
-}
-
 /* --- Card Payment Form --- */
 .card-payment-form {
     margin-top: 12px;

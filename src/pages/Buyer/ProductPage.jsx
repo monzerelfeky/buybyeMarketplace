@@ -73,7 +73,6 @@ export default function ProductPage() {
     setCurrentImageIndex(0);
   }, [productId]);
 
-
   const maxQty = product?.quantity ?? 1;
   useEffect(() => {
     const next = Math.max(1, Math.min(quantity, maxQty));
