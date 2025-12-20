@@ -113,6 +113,7 @@ const OrderConfirmationPage = () => {
                     {payload.shipping.address}
                     <br />
                     {payload.shipping.city}
+                    {payload.shipping.postalCode ? `, ${payload.shipping.postalCode}` : ""}
                     <br />
                     {payload.shipping.phone}
                   </p>

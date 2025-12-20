@@ -159,6 +159,7 @@
     font-weight: 600;
 }
 
+
 /* --- Place Order Button --- */
 .place-order-btn {
     margin-top: 15px;
@@ -180,4 +181,238 @@
 .required-asterisk {
   color: red;
   margin-left: 2px;
+}
+
+.checkout-address-row {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+    margin-bottom: 12px;
+}
+
+.checkout-address-card {
+    flex: 1;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px;
+    background: #f9fafb;
+    font-size: 14px;
+    color: #1f2937;
+    min-height: 86px;
+}
+
+.address-card-label {
+    font-weight: 600;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.address-card-line {
+    color: #475569;
+    line-height: 1.4;
+}
+
+.address-card-empty {
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+.checkout-address-btn {
+    min-width: 140px;
+    border-radius: 10px;
+    border: 1px solid #dbe3f0;
+    background: #eef4ff;
+    color: #1d4ed8;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0 14px;
+    transition: 0.2s ease;
+}
+
+.checkout-address-btn:hover {
+    background: #e0e9ff;
+}
+
+.checkout-address-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1200;
+}
+
+.checkout-address-modal {
+    width: min(820px, 92vw);
+    max-height: 85vh;
+    background: #fff;
+    border-radius: 14px;
+    padding: 20px;
+    overflow-y: auto;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.modal-close-btn {
+    background: transparent;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #64748b;
+}
+
+.address-modal-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.address-modal-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px;
+    background: #f8fafc;
+}
+
+.address-modal-card-main {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+}
+
+.address-card-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.address-select-btn,
+.address-edit-btn,
+.address-delete-btn,
+.address-add-btn,
+.address-save-btn,
+.address-cancel-btn {
+    border-radius: 8px;
+    padding: 6px 12px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.address-select-btn {
+    background: #1d4ed8;
+    color: #fff;
+}
+
+.address-edit-btn {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.address-delete-btn {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.address-default-pill {
+    background: #dbeafe;
+    color: #1d4ed8;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 12px;
+}
+
+.address-form-card {
+    margin-top: 12px;
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+}
+
+.address-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.address-form-grid label {
+    font-size: 13px;
+    color: #475569;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.address-form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.address-save-btn {
+    background: #1d4ed8;
+    color: #fff;
+}
+
+.address-cancel-btn {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.address-add-section {
+    margin-top: 18px;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 16px;
+}
+
+.address-add-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.address-add-btn {
+    background: #e0e9ff;
+    color: #1d4ed8;
+}
+
+.address-modal-empty {
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.address-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+@media (max-width: 680px) {
+    .checkout-address-row {
+        flex-direction: column;
+    }
+
+    .checkout-address-btn {
+        width: 100%;
+        height: 42px;
+    }
+
+    .address-form-grid {
+        grid-template-columns: 1fr;
+    }
 }

@@ -309,7 +309,16 @@ export default function CartPanel({ isOpen, onClose }) {
             >
                 View Cart
             </button>
-            <button className="checkout-btn" onClick={() => navigate("/checkout")}>Checkout</button>
+            <button
+                className="checkout-btn"
+                onClick={() => {
+                    if (cartItems.length === 0) return;
+                    navigate("/checkout");
+                }}
+                disabled={cartItems.length === 0}
+            >
+                Checkout
+            </button>
             </div>
         </div>
         </>

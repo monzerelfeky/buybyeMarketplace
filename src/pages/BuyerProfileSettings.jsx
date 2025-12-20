@@ -1,25 +1,57 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
 import "../styles/Header.css";
 import "../styles/Buyer/BuyerProfileSettings.css";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
 
 export default function BuyerProfileSettings() {
-    const STORAGE_KEY = "buyer_profile_settings_v1";
+    const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+    const [baseline, setBaseline] = useState(null);
+    const [profileLoading, setProfileLoading] = useState(false);
+    const [profileError, setProfileError] = useState("");
 
-    const loadBaseline = () => {
-        try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (!raw) return null;
-            return JSON.parse(raw);
-        } catch (e) {
-            return null;
-        }
+    const egyptGovernorates = [
+        "Alexandria",
+        "Aswan",
+        "Asyut",
+        "Beheira",
+        "Beni Suef",
+        "Cairo",
+        "Dakahlia",
+        "Damietta",
+        "Faiyum",
+        "Gharbia",
+        "Giza",
+        "Ismailia",
+        "Kafr El Sheikh",
+        "Luxor",
+        "Matrouh",
+        "Minya",
+        "Monufia",
+        "New Valley",
+        "North Sinai",
+        "Port Said",
+        "Qalyubia",
+        "Qena",
+        "Red Sea",
+        "Sharqia",
+        "Sohag",
+        "South Sinai",
+        "Suez",
+    ];
+
+    const splitName = (name) => {
+        const parts = (name || "").trim().split(/\s+/).filter(Boolean);
+        return {
+            firstName: parts[0] || "",
+            lastName: parts.slice(1).join(" "),
+        };
     };
-    const [baseline, setBaseline] = useState(() => loadBaseline());
 
-    const TABS = ["Personal", "Addresses", "Payments"];
+    const buildName = (first, last) =>
+        [first, last].map((s) => s.trim()).filter(Boolean).join(" ");
+
+    const TABS = ["Personal", "Addresses"];
     const [activeTab, setActiveTab] = useState(TABS[0]);
 
     const [personal, setPersonal] = useState(
@@ -58,6 +90,73 @@ export default function BuyerProfileSettings() {
     const [addressErrors, setAddressErrors] = useState({});
     const [cardErrors, setCardErrors] = useState({});
 
+    const mapAddressToLocal = (addr) => ({
+        label: addr?.label || "Home",
+        line1: addr?.addressLine1 || "",
+        line2: addr?.addressLine2 || "",
+        city: addr?.city || "",
+        state: addr?.state || "",
+        postalCode: addr?.postalCode || "",
+        country: addr?.country || "",
+        isDefault: Boolean(addr?.isDefault),
+    });
+
+    useEffect(() => {
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+            setProfileError("Please login to manage your profile.");
+            return;
+        }
+
+        const fetchProfile = async () => {
+            setProfileLoading(true);
+            setProfileError("");
+            try {
+                const [profileRes, addressRes] = await Promise.all([
+                    fetch(`${API_BASE}/api/users/me`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }),
+                    fetch(`${API_BASE}/api/users/me/addresses`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }),
+                ]);
+
+                if (!profileRes.ok) throw new Error("Failed to load profile");
+                const profile = await profileRes.json();
+                const addressesRes = addressRes.ok ? await addressRes.json() : [];
+
+                const nameParts = splitName(profile?.name || "");
+                const nextPersonal = {
+                    firstName: nameParts.firstName,
+                    lastName: nameParts.lastName,
+                    email: profile?.email || "",
+                    phone: profile?.phone || "",
+                };
+                const nextAddresses = Array.isArray(addressesRes)
+                    ? addressesRes.map(mapAddressToLocal)
+                    : [];
+
+                setPersonal(nextPersonal);
+                setAddresses(nextAddresses);
+                setBaseline({ personal: nextPersonal, addresses: nextAddresses, cards });
+            } catch (err) {
+                console.error("Profile fetch failed:", err);
+                setProfileError("Failed to load profile details.");
+            } finally {
+                setProfileLoading(false);
+            }
+        };
+
+        fetchProfile();
+        const handleAuthChange = () => fetchProfile();
+        window.addEventListener("auth-changed", handleAuthChange);
+        window.addEventListener("storage", handleAuthChange);
+        return () => {
+            window.removeEventListener("auth-changed", handleAuthChange);
+            window.removeEventListener("storage", handleAuthChange);
+        };
+    }, [API_BASE]);
+
     const isPersonalDirty = () => {
         const base = baseline?.personal ?? { firstName: "", lastName: "", email: "", phone: "" };
         return JSON.stringify(base) !== JSON.stringify(personal);
@@ -69,7 +168,6 @@ export default function BuyerProfileSettings() {
 
     function persistAll(newState = null) {
         const toSave = newState ?? { personal, addresses, cards };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
         setBaseline(toSave);
     }
 
@@ -106,19 +204,50 @@ export default function BuyerProfileSettings() {
     async function savePersonal() {
         if (!validatePersonal()) return;
         setPersonalSaving(true);
-        await sleep(600);
-        persistAll({ personal, addresses, cards });
-        setPersonalSaving(false);
-        setLiveMessage("Personal info saved");
-        setTimeout(() => setLiveMessage(""), 2000);
+        try {
+            const token = localStorage.getItem("authToken");
+            if (!token) {
+                setLiveMessage("Please login to save changes");
+                setPersonalSaving(false);
+                return;
+            }
+            const res = await fetch(`${API_BASE}/api/users/me`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    name: buildName(personal.firstName, personal.lastName),
+                    phone: personal.phone,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || "Failed to save personal info");
+
+            const parts = splitName(data?.name || "");
+            const nextPersonal = {
+                firstName: parts.firstName,
+                lastName: parts.lastName,
+                email: data?.email || personal.email,
+                phone: data?.phone || personal.phone,
+            };
+            setPersonal(nextPersonal);
+            persistAll({ personal: nextPersonal, addresses, cards });
+            setLiveMessage("Personal info saved");
+            setTimeout(() => setLiveMessage(""), 2000);
+        } catch (err) {
+            console.error("Save personal info failed:", err);
+            setLiveMessage("Failed to save personal info");
+            setTimeout(() => setLiveMessage(""), 3000);
+        } finally {
+            setPersonalSaving(false);
+        }
     }
 
     async function saveAddressesState(nextAddresses) {
-        setAddressSaving(true);
         setAddresses(nextAddresses);
-        await sleep(500);
         persistAll({ personal, addresses: nextAddresses, cards });
-        setAddressSaving(false);
         setLiveMessage("Addresses saved");
         setTimeout(() => setLiveMessage(""), 2000);
     }
@@ -168,19 +297,56 @@ export default function BuyerProfileSettings() {
 
     async function submitAddressModal() {
         if (!validateAddressForm()) return;
+        setAddressSaving(true);
+        try {
+            const token = localStorage.getItem("authToken");
+            if (!token) {
+                setLiveMessage("Please login to save addresses");
+                setAddressSaving(false);
+                return;
+            }
 
-        const next = [...addresses];
-        if (addressEditingIndex != null) next[addressEditingIndex] = { ...addressForm };
-        else next.push({ ...addressForm });
+            const payload = {
+                label: addressForm.label,
+                addressLine1: addressForm.line1,
+                addressLine2: addressForm.line2,
+                city: addressForm.city,
+                state: addressForm.state,
+                postalCode: addressForm.postalCode,
+                country: addressForm.country,
+                isDefault: addressForm.isDefault,
+            };
 
-        if (addressForm.isDefault) {
-            for (let i = 0; i < next.length; i++)
-                next[i].isDefault = i === (addressEditingIndex ?? next.length - 1);
+            const url =
+                addressEditingIndex != null
+                    ? `${API_BASE}/api/users/me/addresses/${addressEditingIndex}`
+                    : `${API_BASE}/api/users/me/addresses`;
+            const method = addressEditingIndex != null ? "PUT" : "POST";
+
+            const res = await fetch(url, {
+                method,
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || "Failed to save address");
+
+            const nextAddresses = Array.isArray(data)
+                ? data.map(mapAddressToLocal)
+                : [];
+            await saveAddressesState(nextAddresses);
+            setAddressModalOpen(false);
+            setAddressErrors({});
+        } catch (err) {
+            console.error("Save address failed:", err);
+            setLiveMessage("Failed to save address");
+            setTimeout(() => setLiveMessage(""), 3000);
+        } finally {
+            setAddressSaving(false);
         }
-
-        await saveAddressesState(next);
-        setAddressModalOpen(false);
-        setAddressErrors({});
     }
 
     function openCardModalForNew() {
@@ -222,7 +388,28 @@ export default function BuyerProfileSettings() {
         if (!confirmation) return;
         if (confirmation.type === "delete-address") {
             const idx = confirmation.payload;
-            await saveAddressesState(addresses.filter((_, i) => i !== idx));
+            try {
+                const token = localStorage.getItem("authToken");
+                if (!token) {
+                    setLiveMessage("Please login to delete addresses");
+                    setConfirmation(null);
+                    return;
+                }
+                const res = await fetch(`${API_BASE}/api/users/me/addresses/${idx}`, {
+                    method: "DELETE",
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || "Failed to delete address");
+                const nextAddresses = Array.isArray(data)
+                    ? data.map(mapAddressToLocal)
+                    : [];
+                await saveAddressesState(nextAddresses);
+            } catch (err) {
+                console.error("Delete address failed:", err);
+                setLiveMessage("Failed to delete address");
+                setTimeout(() => setLiveMessage(""), 3000);
+            }
         }
         if (confirmation.type === "delete-card") {
             const idx = confirmation.payload;
@@ -280,7 +467,7 @@ export default function BuyerProfileSettings() {
     const cardModalRef = useModalFocusTrap(isCardModalOpen, closeCardModal);
     const confirmModalRef = useModalFocusTrap(Boolean(confirmation), closeConfirmModal);
 
-    const anyDirty = isPersonalDirty() || isAddressesDirty() || isCardsDirty();
+    const anyDirty = isPersonalDirty() || isAddressesDirty();
 
     useEffect(() => {
         if (!baseline) return;
@@ -315,16 +502,6 @@ export default function BuyerProfileSettings() {
             if (!a.postalCode) return `Address ${i + 1}: postal code required`;
         }
 
-        for (let i = 0; i < cards.length; i++) {
-            const c = cards[i];
-            if (!/^[0-9]{4}$/.test(c.last4))
-                return `Card ${i + 1}: last 4 digits must be 4 numbers`;
-            if (!/^[0-9]{1,2}$/.test(c.expMonth))
-                return `Card ${i + 1}: invalid exp month`;
-            if (!/^[0-9]{4}$/.test(c.expYear))
-                return `Card ${i + 1}: invalid exp year`;
-        }
-
         return null;
     }
 
@@ -337,19 +514,18 @@ export default function BuyerProfileSettings() {
             setLiveMessage(err);
             setTimeout(() => setLiveMessage(""), 3000);
             if (err.toLowerCase().includes("address")) setActiveTab("Addresses");
-            else if (err.toLowerCase().includes("card") || err.toLowerCase().includes("payment"))
-                setActiveTab("Payments");
             else setActiveTab("Personal");
             return;
         }
 
         setSavingAll(true);
         try {
-            await sleep(500);
-            const snapshot = { personal, addresses, cards };
-            persistAll(snapshot);
-            setLiveMessage("All settings saved");
-            setTimeout(() => setLiveMessage(""), 2000);
+            if (isPersonalDirty()) {
+                await savePersonal();
+            } else {
+                setLiveMessage("Settings saved");
+                setTimeout(() => setLiveMessage(""), 2000);
+            }
         } catch (e) {
             console.error("Failed saving all:", e);
             setLiveMessage("Failed to save settings");
@@ -363,8 +539,7 @@ export default function BuyerProfileSettings() {
         function handleBeforeUnload(e) {
             const dirty =
                 JSON.stringify(baseline?.personal ?? {}) !== JSON.stringify(personal) ||
-                JSON.stringify(baseline?.addresses ?? []) !== JSON.stringify(addresses) ||
-                JSON.stringify(baseline?.cards ?? []) !== JSON.stringify(cards);
+                JSON.stringify(baseline?.addresses ?? []) !== JSON.stringify(addresses);
 
             if (dirty) {
                 e.preventDefault();
@@ -394,6 +569,10 @@ export default function BuyerProfileSettings() {
                         {liveMessage}
                     </div>
                 </div>
+                {profileLoading && (
+                    <div className="bps-sub">Loading profile details...</div>
+                )}
+                {profileError && <div className="bps-error">{profileError}</div>}
 
                 <div className="bps-layout">
                     <nav className="bps-sidebar" aria-label="Profile tabs">
@@ -491,6 +670,7 @@ export default function BuyerProfileSettings() {
                                                 aria-label="Email"
                                                 className="input-base"
                                                 value={personal.email}
+                                                disabled
                                                 onChange={(e) =>
                                                     setPersonal({
                                                         ...personal,
@@ -828,7 +1008,7 @@ export default function BuyerProfileSettings() {
 
                                 <label>
                                     City
-                                    <input
+                                    <select
                                         className="input-base"
                                         value={addressForm.city}
                                         onChange={(e) =>
@@ -837,7 +1017,14 @@ export default function BuyerProfileSettings() {
                                                 city: e.target.value,
                                             }))
                                         }
-                                    />
+                                    >
+                                        <option value="">Select a city</option>
+                                        {egyptGovernorates.map((gov) => (
+                                            <option key={gov} value={gov}>
+                                                {gov}
+                                            </option>
+                                        ))}
+                                    </select>
                                     {addressErrors.city && (
                                         <div className="bps-error">
                                             {addressErrors.city}

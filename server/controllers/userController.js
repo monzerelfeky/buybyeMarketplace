@@ -78,7 +78,7 @@ exports.listAddresses = async (req, res) => {
 
 exports.addAddress = async (req, res) => {
   try {
-    const { label, addressLine1, addressLine2, city, postalCode, isDefault } = req.body;
+    const { label, addressLine1, addressLine2, city, state, postalCode, country, isDefault } = req.body;
 
     if (!addressLine1 || !city || !postalCode) {
       return res.status(400).json({ message: 'Missing required fields: addressLine1, city, postalCode' });
@@ -94,7 +94,9 @@ exports.addAddress = async (req, res) => {
       addressLine1,
       addressLine2: addressLine2 || '',
       city,
+      state: state || '',
       postalCode,
+      country: country || '',
       isDefault: Boolean(isDefault),
     };
 
@@ -125,7 +127,7 @@ exports.updateAddress = async (req, res) => {
     const idx = parseIndex(req.params.index);
     if (idx === null) return res.status(400).json({ message: 'Invalid index' });
 
-    const { label, addressLine1, addressLine2, city, postalCode, isDefault } = req.body;
+    const { label, addressLine1, addressLine2, city, state, postalCode, country, isDefault } = req.body;
 
     const user = await User.findById(req.user.id).select('addresses updatedAt');
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -137,7 +139,9 @@ exports.updateAddress = async (req, res) => {
     if (addressLine1 !== undefined) next[idx].addressLine1 = addressLine1;
     if (addressLine2 !== undefined) next[idx].addressLine2 = addressLine2;
     if (city !== undefined) next[idx].city = city;
+    if (state !== undefined) next[idx].state = state;
     if (postalCode !== undefined) next[idx].postalCode = postalCode;
+    if (country !== undefined) next[idx].country = country;
 
     if (!next[idx].addressLine1 || !next[idx].city || !next[idx].postalCode) {
       return res.status(400).json({ message: 'addressLine1, city, postalCode are required' });

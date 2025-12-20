@@ -6,7 +6,9 @@ const AddressSchema = new Schema({
   addressLine1: String,
   addressLine2: String,
   city: String,
+  state: String,
   postalCode: String,
+  country: String,
   isDefault: { type: Boolean, default: false }
 }, { _id: false });
 
