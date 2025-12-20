@@ -9,13 +9,15 @@ import "../../styles/seller/serviceability.css";
 
 export default function ServiceabilitySettings() {
   const { serviceAreas, saveServiceAreas, loading } = useSeller();
-  const [rows, setRows] = useState([{ city: "", deliveryFee: 0 }]);
+  const [rows, setRows] = useState([{ city: "", areaName: "", radiusKm: 0, deliveryFee: 0 }]);
   const [status, setStatus] = useState(null);
 
   useEffect(() => {
     if (serviceAreas && serviceAreas.length > 0) {
       setRows(serviceAreas.map((a) => ({
         city: a.city || "",
+        areaName: a.areaName || "",
+        radiusKm: a.radiusKm || 0,
         deliveryFee: a.deliveryFee || 0
       })));
     }
@@ -28,25 +30,25 @@ export default function ServiceabilitySettings() {
   };
 
   const addRow = () => {
-    setRows((prev) => [...prev, { city: "", deliveryFee: 0 }]);
+    setRows((prev) => [...prev, { city: "", areaName: "", radiusKm: 0, deliveryFee: 0 }]);
   };
 
   const removeRow = (idx) => {
     setRows((prev) => {
       const next = prev.filter((_, i) => i !== idx);
       // Always keep at least one editable row to avoid empty UI
-      return next.length > 0 ? next : [{ city: "", deliveryFee: 0 }];
+      return next.length > 0 ? next : [{ city: "", areaName: "", radiusKm: 0, deliveryFee: 0 }];
     });
   };
 
   const handleSave = async () => {
     setStatus(null);
     const cleaned = rows
-      .filter((r) => r.city)
+      .filter((r) => r.city || r.areaName)
       .map((r) => ({
         city: r.city.trim(),
-        areaName: "",
-        radiusKm: 0,
+        areaName: r.areaName.trim(),
+        radiusKm: Number(r.radiusKm) || 0,
         deliveryFee: Number(r.deliveryFee) || 0,
       }));
 
@@ -65,7 +67,7 @@ export default function ServiceabilitySettings() {
         <div className="serviceability-header">
           <div>
             <h1>Serviceability & Delivery</h1>
-            <p>Define the cities you deliver to and set a delivery fee for each.</p>
+            <p>Define where you deliver, radius for drop-offs, and per-area fees.</p>
           </div>
         </div>
 
@@ -83,6 +85,8 @@ export default function ServiceabilitySettings() {
           <div className="serviceability-table">
             <div className="serviceability-head">
               <span>City</span>
+              <span>Area / Neighborhood</span>
+              <span>Radius (km)</span>
               <span>Delivery fee</span>
               <span></span>
             </div>
@@ -93,6 +97,19 @@ export default function ServiceabilitySettings() {
                   value={row.city}
                   onChange={(e) => handleChange(idx, "city", e.target.value)}
                   placeholder="e.g. Cairo"
+                />
+                <input
+                  className="svc-input"
+                  value={row.areaName}
+                  onChange={(e) => handleChange(idx, "areaName", e.target.value)}
+                  placeholder="e.g. Zamalek / Downtown"
+                />
+                <input
+                  className="svc-input"
+                  type="number"
+                  min="0"
+                  value={row.radiusKm}
+                  onChange={(e) => handleChange(idx, "radiusKm", e.target.value)}
                 />
                 <input
                   className="svc-input"
