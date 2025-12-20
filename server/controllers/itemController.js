@@ -1,7 +1,9 @@
-// server/controllers/itemController.js
-const Item = require("../models/Item");
-const { processImages, deleteImages } = require("../utils/imageHandler");
-const { recalcOrdersForItem } = require("../services/itemService");
+const mongoose = require('mongoose');
+const Item = require('../models/Item');
+const Comment = require('../models/Comment');
+const { processImages, deleteImages } = require('../utils/imageHandler');
+const { recalcOrdersForItem } = require('../services/itemService');
+const { summarizeReviews } = require('../services/aiReviewSummaryService');
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -274,4 +276,39 @@ exports.deleteItem = async (req, res) => {
     console.error(err);
     res.status(400).json({ message: "Bad request" });
   }
-}; 
+};
+
+// GET /api/items/:itemId/reviews/summary
+exports.getReviewSummary = async (req, res) => {
+  try {
+    const { itemId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(itemId)) {
+      return res.status(400).json({ message: 'Invalid item id' });
+    }
+
+    const item = await Item.findById(itemId).select('_id');
+    if (!item) return res.status(404).json({ message: 'Not found' });
+
+    const comments = await Comment.find({ itemId, type: 'product' })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .lean();
+
+    if (!comments.length) {
+      return res.json({ message: 'No reviews yet' });
+    }
+
+    const ratings = comments
+      .map((comment) => (Number.isFinite(comment.rating) ? comment.rating : null))
+      .filter((rating) => rating !== null);
+    const averageRating = ratings.length
+      ? Number((ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length).toFixed(2))
+      : null;
+
+    const result = await summarizeReviews(comments);
+    res.json({ ...result, averageRating });
+  } catch (err) {
+    console.error('Failed to summarize reviews', err.message);
+    res.status(503).json({ message: 'Summary unavailable' });
+  }
+};

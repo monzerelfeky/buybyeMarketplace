@@ -22,6 +22,10 @@ export default function ProductPage() {
   const [quantity, setQuantity] = useState(1);
   const [quantityInput, setQuantityInput] = useState("1");
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [reviewSummary, setReviewSummary] = useState(null);
+  const [summaryError, setSummaryError] = useState("");
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryRequested, setSummaryRequested] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
@@ -182,6 +186,38 @@ export default function ProductPage() {
       .filter(Boolean);
   };
 
+  const handleSummarizeReviews = async () => {
+    if (!productId) return;
+
+    setSummaryLoading(true);
+    setSummaryError("");
+    setSummaryRequested(true);
+
+    try {
+      const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+      const res = await fetch(`${API_BASE}/api/items/${productId}/reviews/summary`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Summary unavailable");
+      }
+
+      if (data.message) {
+        setReviewSummary(null);
+        setSummaryError(data.message);
+        return;
+      }
+
+      setReviewSummary(data);
+    } catch (err) {
+      console.error("Failed to summarize reviews:", err);
+      setReviewSummary(null);
+      setSummaryError("Summary unavailable");
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
   return (
     <>
       <Header />
@@ -331,9 +367,39 @@ export default function ProductPage() {
                   </button>
                 </div>
 
-                <div className="AI-container">
-                  <p>AI comments summary..</p>
-                  <button>Summarize Comments</button>
+                <div className="ai-summary-section">
+                  <div className="ai-summary-title">AI comments summary</div>
+                  <div className="ai-summary-card">
+                    <div className="ai-summary-actions">
+                      {!summaryRequested && (
+                        <button
+                          className="btn btn-primary ai-summary-button"
+                          onClick={handleSummarizeReviews}
+                          disabled={summaryLoading}
+                        >
+                          {summaryLoading ? "Summarizing..." : "Summarize Reviews"}
+                        </button>
+                      )}
+                      {summaryRequested && summaryLoading && (
+                        <div className="ai-summary-loading">Summarizing...</div>
+                      )}
+                      {summaryRequested && !summaryLoading && !reviewSummary && summaryError && (
+                        <div className="ai-summary-error">{summaryError}</div>
+                      )}
+                    </div>
+
+                    {reviewSummary?.summary && (
+                      <div className="ai-summary-result">
+                        <p>{reviewSummary.summary}</p>
+                        <div className="ai-summary-meta">
+                          <span>Sentiment: {reviewSummary.sentiment}</span>
+                          {reviewSummary.averageRating !== null && reviewSummary.averageRating !== undefined && (
+                            <span>Average rating: {reviewSummary.averageRating} / 5</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="comment-section">

@@ -12,6 +12,7 @@ const router = express.Router();
 
 // Optional filter by sellerId to return only that seller's items
 router.get('/suggestions', getSuggestions);
+router.get('/:itemId/reviews/summary', getReviewSummary);
 router.get('/', listItems);
 router.get('/:id', getItem);
 router.post('/', createItem);
