@@ -313,13 +313,14 @@ export function SellerProvider({ children }) {
     }
   };
 
-  const flagCustomer = async ({ orderId, reason }) => {
-    if (!orderId || !reason) return { error: "Missing order or reason" };
+  const flagCustomer = async ({ orderId, itemId, reason }) => {
+    if (!orderId || !itemId || !reason) return { error: "Missing order, item, or reason" };
     const sellerId = sellerIdRef.current || getStoredSellerId();
     const order = orders.find((o) => o.id === orderId || o._id === orderId);
 
     const payload = {
       orderId,
+      itemId,
       reason,
       flaggedUserRole: "buyer",
       flaggedUserId: order?.buyerId || order?.buyer?._id,

@@ -42,7 +42,8 @@
 /* Cards */
 .timeline-card,
 .contact-card,
-.comments-card {
+.comments-card,
+.report-issue-card {
   background: #fff;
   border-radius: 8px;
   padding: 20px;
@@ -51,8 +52,20 @@
 
 .timeline-card h2,
 .comments-card h3,
-.contact-card h3 {
+.contact-card h3,
+.report-issue-card h3 {
   margin-bottom: 15px;
+}
+
+.order-cancelled-banner {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 14px;
 }
 
 /* Timeline */
@@ -65,7 +78,7 @@
 .timeline-step {
   display: flex;
   gap: 15px;
-  margin-bottom: 20px;
+  margin-bottom: 0;
   opacity: 0.5;
 }
 
@@ -73,21 +86,78 @@
   opacity: 1;
 }
 
+.step-marker-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  align-self: stretch;
+  padding-bottom: 20px;
+}
+
+.timeline-step:last-child .step-marker-wrap {
+  padding-bottom: 0;
+}
+
 .step-marker {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #ddd;
-  color: #000;
+  background: #e2e8f0;
+  border: 4px solid #fff;
+  box-shadow: 0 0 0 2px #e2e8f0;
+  color: #111;
   font-weight: bold;
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 2;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.timeline-step.active .step-marker {
-  background: #007bff;
-  color: #fff;
+.step-marker.completed {
+  box-shadow: 0 0 0 2px currentColor;
+}
+
+.step-marker.active {
+  box-shadow:
+    0 0 0 6px rgba(29, 78, 216, 0.35),
+    0 8px 18px rgba(29, 78, 216, 0.25);
+  animation: stepPulse 1.4s infinite ease-in-out;
+}
+
+.step-line {
+  width: 4px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  position: absolute;
+  top: 32px;
+  bottom: 0;
+  overflow: hidden;
+}
+
+.step-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #3b82f6;
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 0.4s ease;
+}
+
+.step-line.completed::after {
+  transform: scaleY(1);
+}
+
+.timeline-step:last-child .step-line {
+  display: none;
+}
+
+@keyframes stepPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
 }
 
 .step-content {
@@ -119,6 +189,85 @@
 
 .update-msg {
   margin-top: 4px;
+}
+
+/* Report Issue Card */
+.report-issue-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 25px;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.report-issue-card p {
+  color: #555;
+}
+
+.report-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.report-buttons .primary {
+  padding: 14px 18px;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.report-buttons .primary:hover {
+  background: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 15px rgba(0, 123, 255, 0.3);
+}
+
+.report-buttons .primary:disabled {
+  background: #a0c8ff;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.report-buttons .secondary {
+  padding: 14px 18px;
+  background: #6c757d;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.report-buttons .secondary:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 15px rgba(108, 117, 125, 0.3);
+}
+
+.report-buttons .secondary.cancel-btn {
+  background: #dc2626;
+}
+
+.report-buttons .secondary.cancel-btn:hover {
+  background: #b91c1c;
+  box-shadow: 0 6px 15px rgba(220, 38, 38, 0.3);
+}
+
+.report-buttons .secondary.cancel-btn:disabled {
+  background: #848484;
+  color: #282828;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
 /* Contact seller */
@@ -154,8 +303,8 @@
 
 .btn:hover,
 .primary:hover {
-  background: #0056b3;  
-  transform: translateY(-1px); 
+  background: #0056b3;
+  transform: translateY(-1px);
 }
 
 /* Secondary buttons */
@@ -164,9 +313,7 @@
   color: #007bff;
 }
 
-
-
-/* Small buttons (Edit) */
+/* Small buttons (Edit/Delete) */
 .small {
   font-size: 12px;
   padding: 5px 10px;
@@ -178,18 +325,17 @@
 }
 
 .small:hover {
-  background: #0056b3;   
-  transform: translateY(-1px); 
+  background: #0056b3;
+  transform: translateY(-1px);
 }
 
-/* Delete button stays red */
 .small.danger {
   background: #dc3545;
   color: #fff;
 }
 
 .small.danger:hover {
-  background: #b02a37;   
+  background: #b02a37;
   transform: translateY(-1px);
 }
 

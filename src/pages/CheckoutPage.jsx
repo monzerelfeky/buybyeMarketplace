@@ -1,11 +1,17 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useNavigate } from "react-router-dom";
+import CardPaymentForm from "../components/Checkout/CardPaymentForm";
 import "../styles/CheckoutPage.css";
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
+  const [cartItems, setCartItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [orderError, setOrderError] = useState("");
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
   const egyptGovernorates = [
     "Alexandria", "Aswan", "Asyut", "Beheira", "Beni Suef", "Cairo",
@@ -37,20 +43,121 @@ export default function CheckoutPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handlePlaceOrder = () => {
-    if (!validateFields()) return;
-
-    const orderData = {
-      shipping,
-      paymentMethod,
-      items: [
-        { name: "Product A", price: 25 },
-        { name: "Product B", price: 15 }
-      ],
-      total: 40
+  useEffect(() => {
+    const fetchCart = async () => {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        setCartItems([]);
+        return;
+      }
+      setLoading(true);
+      try {
+        const res = await fetch(`${API_BASE}/api/users/me/cart`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error("Failed to fetch cart");
+        const data = await res.json();
+        setCartItems(data);
+      } catch (err) {
+        console.error("Cart fetch error:", err);
+        setCartItems([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    navigate("/order-confirmation", { state: orderData });
+    fetchCart();
+  }, [API_BASE]);
+
+  const totalPrice = useMemo(
+    () =>
+      cartItems.reduce(
+        (sum, entry) => sum + (Number(entry.itemId?.price) || 0) * (entry.quantity || 0),
+        0
+      ),
+    [cartItems]
+  );
+
+  const handlePlaceOrder = async () => {
+    if (!validateFields()) return;
+    setOrderError("");
+    setIsPlacingOrder(true);
+
+    const token = localStorage.getItem("authToken");
+    const storedUser = localStorage.getItem("user");
+    const user = storedUser ? JSON.parse(storedUser) : null;
+    if (!token || !user?.id) {
+      setOrderError("Please login to place an order.");
+      setIsPlacingOrder(false);
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      setOrderError("Your cart is empty.");
+      setIsPlacingOrder(false);
+      return;
+    }
+
+    try {
+      const grouped = cartItems.reduce((acc, entry) => {
+        const sellerId = entry.itemId?.seller;
+        if (!sellerId) return acc;
+        acc[sellerId] = acc[sellerId] || [];
+        acc[sellerId].push({
+          itemId: entry.itemId?._id || entry.itemId,
+          quantity: entry.quantity,
+        });
+        return acc;
+      }, {});
+
+      const orders = [];
+      for (const [sellerId, items] of Object.entries(grouped)) {
+        const res = await fetch(`${API_BASE}/api/orders`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            buyerId: user.id || user._id,
+            sellerId,
+            items,
+            deliveryAddress: {
+              city: shipping.city,
+              addressLine1: shipping.address,
+              addressLine2: "",
+              postalCode: "",
+            },
+            buyerNotes: "",
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Order failed");
+        orders.push(data);
+      }
+
+      await fetch(`${API_BASE}/api/users/me/cart`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const confirmationPayload = {
+        orders,
+        shipping,
+        paymentMethod,
+        total: totalPrice,
+      };
+      sessionStorage.setItem(
+        "lastOrderConfirmation",
+        JSON.stringify(confirmationPayload)
+      );
+      navigate("/order-confirmation", { state: confirmationPayload });
+    } catch (err) {
+      console.error("Order error:", err);
+      setOrderError("Failed to place order. Please try again.");
+    } finally {
+      setIsPlacingOrder(false);
+    }
   };
 
   return (
@@ -157,6 +264,10 @@ export default function CheckoutPage() {
                 />
                 Credit / Debit Card
               </label>
+
+              {paymentMethod === "card" && (
+                <CardPaymentForm onPay={handlePlaceOrder} isSubmitting={isPlacingOrder} />
+              )}
             </div>
           </div>
 
@@ -166,28 +277,28 @@ export default function CheckoutPage() {
               <h3 className="checkout-section-title">Order Summary</h3>
 
               <div className="summary-item">
-                <span>Product A</span>
-                <span>$25</span>
-              </div>
-
-              <div className="summary-item">
-                <span>Product B</span>
-                <span>$15</span>
+                <span>Items</span>
+                <span>{cartItems.length}</span>
               </div>
 
               <hr />
 
               <div className="summary-total">
                 <strong>Total</strong>
-                <strong>$40</strong>
+                <strong>EGP {Number(totalPrice || 0).toLocaleString()}</strong>
               </div>
 
-              <button
-                className="place-order-btn"
-                onClick={handlePlaceOrder}
-              >
-                Place Order
-              </button>
+              {orderError ? <p className="form-error">{orderError}</p> : null}
+
+              {paymentMethod === "cash" && (
+                <button
+                  className="place-order-btn"
+                  onClick={handlePlaceOrder}
+                  disabled={loading || cartItems.length === 0 || isPlacingOrder}
+                >
+                  {isPlacingOrder ? "Placing Order..." : "Place Order"}
+                </button>
+              )}
             </div>
           </div>
 

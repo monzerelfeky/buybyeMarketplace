@@ -21,6 +21,7 @@ function getLocalSellerId() {
 export default function SellerFlags() {
   const { orders, flags, flagCustomer, updateFlagStatus, loading } = useSeller();
   const [selectedOrder, setSelectedOrder] = useState("");
+  const [selectedItem, setSelectedItem] = useState("");
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [banner, setBanner] = useState(null);
@@ -52,21 +53,69 @@ export default function SellerFlags() {
     [orders]
   );
 
+  const itemOptions = useMemo(() => {
+    const order = orders.find((o) => o.id === selectedOrder || o._id === selectedOrder);
+    const items = Array.isArray(order?.items) ? order.items : [];
+    const flaggedIds = new Set(
+      flags
+        .filter((flag) => {
+          const orderId = flag.orderId?._id || flag.orderId || flag.orderId?.id;
+          const createdBy = flag.createdByUserId?._id || flag.createdByUserId || flag.createdByUserId?.id;
+          return (
+            String(orderId) === String(selectedOrder) &&
+            flag.flaggedUserRole === "buyer" &&
+            (!sellerId || String(createdBy) === String(sellerId))
+          );
+        })
+        .map((flag) => String(flag.itemId?._id || flag.itemId || flag.itemId?.id))
+        .filter(Boolean)
+    );
+    return items.map((item, index) => {
+      const rawId = item.itemId?._id || item.itemId || item._id || item.id;
+      const label = item.name || item.title || `Item ${index + 1}`;
+      return {
+        value: String(rawId),
+        label,
+        disabled: flaggedIds.has(String(rawId)),
+      };
+    });
+  }, [orders, flags, selectedOrder, sellerId]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedOrder || !reason.trim()) {
-      setBanner({ type: "error", message: "Select an order and add a reason." });
+    if (!selectedOrder || !selectedItem || !reason.trim()) {
+      setBanner({ type: "error", message: "Select an order, a product, and add a reason." });
+      return;
+    }
+    const alreadyFlagged = flags.some((flag) => {
+      const orderId = flag.orderId?._id || flag.orderId || flag.orderId?.id;
+      const itemId = flag.itemId?._id || flag.itemId || flag.itemId?.id;
+      const createdBy = flag.createdByUserId?._id || flag.createdByUserId || flag.createdByUserId?.id;
+      return (
+        String(orderId) === String(selectedOrder) &&
+        String(itemId) === String(selectedItem) &&
+        flag.flaggedUserRole === "buyer" &&
+        (!sellerId || String(createdBy) === String(sellerId))
+      );
+    });
+    if (alreadyFlagged) {
+      setBanner({ type: "error", message: "This product in this order is already flagged." });
       return;
     }
     setSubmitting(true);
     setBanner(null);
-    const result = await flagCustomer({ orderId: selectedOrder, reason: reason.trim() });
+    const result = await flagCustomer({
+      orderId: selectedOrder,
+      itemId: selectedItem,
+      reason: reason.trim(),
+    });
     if (result?.error) {
       setBanner({ type: "error", message: result.error });
     } else {
       setBanner({ type: "success", message: "Flag submitted for this customer." });
       setReason("");
       setSelectedOrder("");
+      setSelectedItem("");
     }
     setSubmitting(false);
   };
@@ -143,7 +192,26 @@ export default function SellerFlags() {
                     ))}
                   </select>
                 </div>
-            </div>
+              </div>
+
+              <div className="flag-form-row">
+                <div className="flag-field">
+                  <label className="form-label">Product</label>
+                  <select
+                    className="flag-input"
+                    value={selectedItem}
+                    onChange={(e) => setSelectedItem(e.target.value)}
+                    disabled={!selectedOrder}
+                  >
+                    <option value="">Select a product</option>
+                    {itemOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value} disabled={opt.disabled}>
+                        {opt.label}{opt.disabled ? " (Already flagged)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
               <label className="form-label">Reason</label>
               <textarea

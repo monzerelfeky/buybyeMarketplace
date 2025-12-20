@@ -14,6 +14,7 @@ import { useSeller } from "../../context/SellerContext";
 
 export default function SellerItems() {
   const { items, updateItem, deleteItem, toggleItemStatus } = useSeller();
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
   const [editOpen, setEditOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -26,8 +27,6 @@ export default function SellerItems() {
 
   // image index per item id (for carousel)
   const [imageIndexById, setImageIndexById] = useState({});
-
-  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
   /* -----------------------------
         EDIT HANDLERS
@@ -99,6 +98,18 @@ export default function SellerItems() {
 
   const goToImage = (itemId, index) => {
     setImageIndexById((prev) => ({ ...prev, [itemId]: index }));
+  };
+
+  const getImageSrc = (img) => {
+    if (!img || typeof img !== "string") return null;
+    if (img.startsWith("http://") || img.startsWith("https://")) return img;
+    if (img.startsWith("data:")) return img;
+    if (img.includes("uploads/images/")) {
+      const filename = img.split("uploads/images/").pop();
+      return `${API_BASE}/uploads/images/${filename}`;
+    }
+    if (img.startsWith("/")) return `${API_BASE}${img}`;
+    return `${API_BASE}/uploads/images/${img}`;
   };
 
   /* -----------------------------
@@ -173,7 +184,7 @@ export default function SellerItems() {
             <option>Electronics</option>
             <option>Home & Garden</option>
             <option>Fashion</option>
-            <option>Sports</option>
+            <option>Sports & Fitness</option>
             <option>Vehicles</option>
             <option>Other</option>
           </select>

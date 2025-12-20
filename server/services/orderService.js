@@ -13,7 +13,7 @@ async function transformOrder(order) {
     .map((i) => i.itemId || i.productId || i._id || i.id)
     .filter(Boolean);
   const dbItems = itemIds.length
-    ? await Item.find({ _id: { $in: itemIds } }).select('price title')
+    ? await Item.find({ _id: { $in: itemIds } }).select('price title images image')
     : [];
   const dbIndex = new Map(dbItems.map((d) => [d._id.toString(), d]));
 
@@ -75,6 +75,8 @@ async function transformOrder(order) {
       price: priceAtOrder,
       priceAtOrder,
       priceFromDb,
+      images: match?.images || itm.images,
+      image: match?.image || itm.image,
       quantity: qty,
     };
   });
@@ -96,6 +98,11 @@ async function transformOrder(order) {
     email: '',
     phone: '',
   };
+  let sellerInfo = {
+    name: 'Unknown Seller',
+    email: '',
+    phone: '',
+  };
 
   if (orderObj.buyerId) {
     try {
@@ -111,6 +118,20 @@ async function transformOrder(order) {
       console.warn('Could not fetch buyer:', err.message);
     }
   }
+  if (orderObj.sellerId) {
+    try {
+      const seller = await User.findById(orderObj.sellerId).select(
+        'name email phone'
+      );
+      if (seller) {
+        sellerInfo.name = seller.name || seller.email || 'Unknown Seller';
+        sellerInfo.email = seller.email || '';
+        sellerInfo.phone = seller.phone || '';
+      }
+    } catch (err) {
+      console.warn('Could not fetch seller:', err.message);
+    }
+  }
 
   return {
     ...orderObj,
@@ -119,6 +140,9 @@ async function transformOrder(order) {
     buyerName: buyerInfo.name,
     buyerEmail: buyerInfo.email,
     buyerPhone: buyerInfo.phone,
+    sellerName: sellerInfo.name,
+    sellerEmail: sellerInfo.email,
+    sellerPhone: sellerInfo.phone,
   };
 }
 

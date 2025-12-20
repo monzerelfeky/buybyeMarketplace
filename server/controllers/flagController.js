@@ -1,5 +1,7 @@
 const Flag = require('../models/Flag');
 const Order = require('../models/Order');
+const User = require('../models/User');
+const { sendEmail } = require('../utils/email');
 const { enforceFlagPolicy } = require('../utils/flagsEnforcer');
 
 async function deriveIdsFromOrder(orderId, payload) {
@@ -38,11 +40,49 @@ exports.createFlag = async (req, res) => {
       await deriveIdsFromOrder(payload.orderId, payload);
     }
 
+    if (payload.orderId && !payload.itemId) {
+      return res.status(400).json({ message: 'itemId is required for order flags' });
+    }
+
+    if (payload.orderId && payload.itemId && payload.createdByUserId) {
+      const existing = await Flag.findOne({
+        orderId: payload.orderId,
+        itemId: payload.itemId,
+        createdByUserId: payload.createdByUserId,
+      }).select('_id');
+      if (existing) {
+        return res.status(409).json({ message: 'This product in this order has already been flagged.' });
+      }
+    }
+
     payload.updatedAt = new Date();
 
     const f = new Flag(payload);
     await f.save();
     try { await enforceFlagPolicy(f.flaggedUserId, f.flaggedUserRole); } catch (e) { console.warn('Policy enforcement failed:', e.message); }
+    try {
+      if (f.flaggedUserId) {
+        const flaggedUser = await User.findById(f.flaggedUserId).select('email name');
+        if (flaggedUser?.email) {
+          const subject = 'Your account received a flag';
+          const text = `Your account has been flagged.${f.reason ? `\n\nReason: ${f.reason}` : ''}`;
+          const html = `
+            <div style="font-family: Arial, sans-serif; color: #111827; background: #f9fafb; padding: 24px;">
+              <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 24px; border: 1px solid #e5e7eb;">
+                <h2 style="margin: 0 0 12px; font-size: 18px;">Account flag notice</h2>
+                <p style="margin: 0 0 10px; font-size: 14px; color: #374151;">
+                  Your account has been flagged.
+                </p>
+                ${f.reason ? `<p style="margin: 0; font-size: 13px; color: #6b7280;">Reason: ${f.reason}</p>` : ''}
+              </div>
+            </div>
+          `;
+          await sendEmail({ to: flaggedUser.email, subject, text, html });
+        }
+      }
+    } catch (err) {
+      console.error('Flag email failed:', err.message);
+    }
     res.status(201).json(f);
   } catch (err) {
     console.error(err);

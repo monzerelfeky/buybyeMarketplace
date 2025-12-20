@@ -1,9 +1,14 @@
 // pages/Buyer/WishlistPage.jsx
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
-import { getWishlist, removeFromWishlist } from "../../utils/wishlist";
+import { 
+  getWishlist, 
+  removeFromWishlist,
+  getLocalWishlist,
+  removeFromLocalWishlist 
+} from "../../utils/wishlist";
 import "../../styles/HomePage.css";
 import "../../styles/Listings.css";   // ✅ important: brings image-nav-btn styles
 import "../../styles/Wishlist.css";
@@ -11,6 +16,9 @@ import "../../styles/Wishlist.css";
 export default function WishlistPage() {
   const [wishlistItems, setWishlistItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState({});
+  const navigate = useNavigate();
 
   // ✅ Same approach as Listings.jsx
   const [currentImageIndex, setCurrentImageIndex] = useState({}); // { [itemId]: number }
@@ -19,29 +27,40 @@ export default function WishlistPage() {
 
   const fetchWishlist = async () => {
     const token = localStorage.getItem("authToken");
-    if (!token) {
-      setWishlistItems([]);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const data = await getWishlist();
-      setWishlistItems(data);
-
-      // init per-item index
-      setCurrentImageIndex((prev) => {
-        const next = { ...prev };
-        (data || []).forEach((it) => {
-          if (next[it._id] === undefined) next[it._id] = 0;
-        });
-        return next;
-      });
-    } catch (err) {
-      console.error("Failed to fetch wishlist:", err);
-      setWishlistItems([]);
-    } finally {
-      setLoading(false);
+    
+    if (token) {
+      setIsLoggedIn(true);
+      try {
+        const data = await getWishlist();
+        setWishlistItems(data);
+      } catch (err) {
+        console.error("Failed to fetch wishlist:", err);
+        setWishlistItems([]);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setIsLoggedIn(false);
+      try {
+        const localIds = getLocalWishlist();
+        
+        if (localIds.length > 0) {
+          const itemPromises = localIds.map(id =>
+            fetch(`${API_BASE}/api/items/${id}`)
+              .then(r => r.ok ? r.json() : null)
+              .catch(() => null)
+          );
+          const items = await Promise.all(itemPromises);
+          setWishlistItems(items.filter(item => item && item._id));
+        } else {
+          setWishlistItems([]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch local wishlist items:", err);
+        setWishlistItems([]);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -55,8 +74,15 @@ export default function WishlistPage() {
   const handleRemove = async (itemId, e) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    const token = localStorage.getItem("authToken");
+    
     try {
-      await removeFromWishlist(itemId);
+      if (token) {
+        await removeFromWishlist(itemId);
+      } else {
+        removeFromLocalWishlist(itemId);
+      }
       setWishlistItems((prev) => prev.filter((item) => item._id !== itemId));
       setCurrentImageIndex((prev) => {
         const copy = { ...prev };
@@ -68,7 +94,28 @@ export default function WishlistPage() {
     }
   };
 
-  // ✅ Copied logic style from Listings.jsx
+  const getImages = (item) => {
+    const rawImages = Array.isArray(item?.images)
+      ? item.images
+      : item?.images
+      ? [item.images]
+      : item?.image
+      ? [item.image]
+      : [];
+    return rawImages
+      .map((img) => {
+        if (!img) return null;
+        if (typeof img === "object" && typeof img.url === "string") return img.url;
+        if (typeof img !== "string") return null;
+        if (img.startsWith("http://") || img.startsWith("https://")) return img;
+        if (img.startsWith("data:")) return img;
+        if (img.startsWith("/uploads/")) return `${API_BASE}${img}`;
+        if (img.startsWith("/")) return `${API_BASE}${img}`;
+        return `${API_BASE}/uploads/images/${img}`;
+      })
+      .filter(Boolean);
+  };
+
   const handlePrevImage = (itemId, imageCount, e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -87,45 +134,19 @@ export default function WishlistPage() {
     }));
   };
 
-  // ✅ Same image resolving logic as Listings.jsx (supports Cloudinary objects + legacy strings)
-  const getImageSrc = (img) => {
-    if (!img) return null;
-
-    // Cloudinary: { url: "https://..." }
-    if (typeof img === "object" && img.url && typeof img.url === "string") {
-      return img.url;
-    }
-
-    if (typeof img !== "string") return null;
-
-    // Full URL
-    if (img.startsWith("http://") || img.startsWith("https://")) return img;
-
-    // Base64 (older items might still have it)
-    if (img.startsWith("data:")) return img;
-
-    // Backend uploads paths
-    if (img.startsWith("/uploads/")) return `${API_BASE}${img}`;
-
-    // Starts with /
-    if (img.startsWith("/")) return `${API_BASE}${img}`;
-
-    // Filename fallback
-    return `${API_BASE}/uploads/images/${img}`;
-  };
-
-  // ✅ Normalize images list (supports array/object/string + legacy item.image)
-  const getItemImages = (item) => {
-    const rawImages = Array.isArray(item.images)
-      ? item.images
-      : item.images
-      ? [item.images]
-      : item.image
-      ? [item.image]
-      : [];
-
-    return rawImages.map(getImageSrc).filter(Boolean);
-  };
+  if (loading) {
+    return (
+      <div className="wishlist-page">
+        <Header />
+        <div className="header-spacer" />
+        <div className="wishlist-loading">
+          <div className="wishlist-loading-spinner"></div>
+          <p>Loading wishlist...</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="wishlist-page">
@@ -142,11 +163,16 @@ export default function WishlistPage() {
                   {wishlistItems.length} {wishlistItems.length === 1 ? "item" : "items"} saved
                 </p>
               )}
+              {!isLoggedIn && wishlistItems.length > 0 && (
+                <p className="wishlist-header-guest-notice">
+                  Login to sync your wishlist across devices
+                </p>
+              )}
             </div>
           </div>
         </div>
 
-        {!loading && wishlistItems.length === 0 ? (
+        {wishlistItems.length === 0 ? (
           <div className="wishlist-empty">
             <div className="wishlist-empty-icon">
               <svg
@@ -164,57 +190,43 @@ export default function WishlistPage() {
             <p className="wishlist-empty-text">
               Start adding items you love to keep track of them easily.
             </p>
+            {!isLoggedIn && (
+              <p className="wishlist-empty-guest-notice">
+                💡 Items you add will be saved temporarily. Login to keep them forever!
+              </p>
+            )}
           </div>
         ) : (
           <div className="wishlist-grid">
             {wishlistItems.map((item) => {
-              const itemImages = getItemImages(item);
+              const itemImages = getImages(item);
               const currentIndex = currentImageIndex[item._id] || 0;
-              const currentImage = itemImages.length ? itemImages[currentIndex] : null;
+              const currentImage =
+                itemImages.length > 0 ? itemImages[currentIndex] : null;
               const hasMultipleImages = itemImages.length > 1;
-
               return (
-                <article key={item._id} className="listing-card">
-                  <div className="listing-image" style={{ position: "relative" }}>
-                    {currentImage ? (
+                <article
+                  key={item._id}
+                  className="listing-card"
+                  onClick={() => navigate(`/product/${item._id}`)}
+                >
+                  <div className="listing-image">
+                    {currentImage && (
                       <img
                         src={currentImage}
-                        alt={`${item.title} - Image ${currentIndex + 1}`}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "contain",       // ✅ matches Listings
-                          display: "block",
-                          backgroundColor: "#f5f5f5", // ✅ matches Listings
-                        }}
-                        loading="lazy"
+                        alt={item.title}
+                        className="listing-image-element"
                         onError={(e) => {
-                          console.error("Image failed to load:", currentImage, "for item:", item.title);
-                          e.currentTarget.style.display = "none";
-                          const placeholder =
-                            e.currentTarget.parentElement.querySelector(".image-placeholder");
-                          if (placeholder) placeholder.style.display = "flex";
+                          e.target.style.display = "none";
+                          const placeholder = e.target.parentElement.querySelector(".image-placeholder");
+                          if (placeholder) placeholder.classList.remove("image-placeholder-hidden");
                         }}
                       />
-                    ) : (
-                      <div
-                        className="image-placeholder"
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          backgroundColor: "#e5e7eb",
-                          color: "#9ca3af",
-                          fontSize: "14px",
-                        }}
-                      >
-                        No Image
-                      </div>
                     )}
+                    <div className={`image-placeholder ${currentImage ? "image-placeholder-hidden" : "image-placeholder-visible"}`}>
+                      No Image
+                    </div>
 
-                    {/* ✅ Same arrows as Listings.jsx */}
                     {hasMultipleImages && (
                       <>
                         <button
@@ -222,14 +234,7 @@ export default function WishlistPage() {
                           onClick={(e) => handlePrevImage(item._id, itemImages.length, e)}
                           aria-label="Previous image"
                         >
-                          <svg
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                          >
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <polyline points="15 18 9 12 15 6"></polyline>
                           </svg>
                         </button>
@@ -238,28 +243,16 @@ export default function WishlistPage() {
                           onClick={(e) => handleNextImage(item._id, itemImages.length, e)}
                           aria-label="Next image"
                         >
-                          <svg
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                          >
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <polyline points="9 18 15 12 9 6"></polyline>
                           </svg>
                         </button>
+                        <div className="image-counter">
+                          {currentIndex + 1} / {itemImages.length}
+                        </div>
                       </>
                     )}
 
-                    {/* ✅ Same counter as Listings.jsx */}
-                    {hasMultipleImages && (
-                      <div className="image-counter">
-                        {currentIndex + 1} / {itemImages.length}
-                      </div>
-                    )}
-
-                    {/* Heart remove button (same look you had) */}
                     <button
                       className="favorite-heart-btn favorited"
                       onClick={(e) => handleRemove(item._id, e)}
@@ -284,9 +277,13 @@ export default function WishlistPage() {
 
                   <div className="listing-body">
                     <h3 className="listing-title">{item.title}</h3>
-                    <p className="listing-price">EGP {Number(item.price || 0).toLocaleString()}</p>
+                    <p className="listing-price">
+                      EGP {Number(item.price || 0).toLocaleString()}
+                    </p>
                     <div className="listing-meta">
-                      <span className="listing-location">{item.category || "Category"}</span>
+                      <span className="listing-location">
+                        {item.category || "Category"}
+                      </span>
                       <span className="listing-time">Saved item</span>
                     </div>
                   </div>
