@@ -15,6 +15,7 @@ const flagsRoutes = require('./routes/flags');
 const notificationsRoutes = require('./routes/notifications');
 const userRoutes = require('./routes/userRoutes');
 const sellersRoutes = require('./routes/sellers');
+const contactRoutes = require('./routes/contact');
 const errorHandler = require('./middlewares/errorHandler');
 const wishlistRoutes = require("./routes/wishlist");
 const authMiddleware = require("./middlewares/auth");
@@ -38,6 +39,7 @@ app.use('/api/flags', flagsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/sellers', sellersRoutes);
+app.use('/api/contact', contactRoutes);
 app.use("/api/wishlist", authMiddleware, wishlistRoutes);
 app.use("/api/upload", require("./routes/uploadRoutes"));
 
