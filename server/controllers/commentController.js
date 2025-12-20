@@ -2,7 +2,11 @@ const Comment = require('../models/Comment');
 
 exports.createComment = async (req, res) => {
   try {
-    const c = new Comment(req.body);
+    const payload = { ...req.body };
+    if (payload.itemId && !payload.orderId && !payload.type) {
+      payload.type = 'product';
+    }
+    const c = new Comment(payload);
     await c.save();
     res.status(201).json(c);
   } catch (err) {

@@ -2,7 +2,13 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const CommentSchema = new Schema({
-  orderId: { type: Schema.Types.ObjectId, ref: 'Order', required: true },
+  orderId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Order',
+    required: function () {
+      return this.type !== 'product';
+    }
+  },
   itemId: { type: Schema.Types.ObjectId, ref: 'Item' },
   authorId: { type: Schema.Types.ObjectId, ref: 'User'},
   type: { type: String, enum: ['order', 'product'], default: 'order' },
