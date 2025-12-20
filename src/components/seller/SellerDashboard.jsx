@@ -22,7 +22,7 @@ export default function SellerDashboard() {
   }).length;
 
   // Flags raised against this seller
-  const flaggedItems = _flags.filter((f) => f.flaggedUserRole === 'seller').length;
+  const flaggedItems = _flags.filter((f) => f.flaggedUserRole === 'buyer').length;
 
   // Normalize order status (supporting legacy and possible statusHistory)
   const normalizeStatus = (o) => {
@@ -110,7 +110,7 @@ export default function SellerDashboard() {
                 <span className="stat-icon">⚠️</span>
               </div>
               <h3 className="stat-value">{flaggedItems}</h3>
-              <p className="stat-label">Flagged Items</p>
+              <p className="stat-label">Flags count</p>
             </div>
 
             <div className="stat-card">
