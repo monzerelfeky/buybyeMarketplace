@@ -1,8 +1,9 @@
 // src/App.jsx
-import React from "react";
+import React, { useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import ScrollToTop from "./components/ScrolltoTop";
 import HomePage from "./pages/HomePage";
+import "./styles/theme.css";
 
 // Seller pages (now in components)
 import SellerDashboard from "./components/seller/SellerDashboard";
@@ -70,6 +71,15 @@ import OrderTrackingPage from "./pages/OrderTrackingPage";
 
 
 export default function App() {
+  useEffect(() => {
+    const saved = localStorage.getItem("theme");
+    if (saved === "dark") {
+      document.body.classList.add("dark-mode");
+    } else {
+      document.body.classList.remove("dark-mode");
+    }
+  }, []);
+
   return (
     <SellerProvider>
       <ScrollToTop />

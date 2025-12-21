@@ -23,6 +23,46 @@ body {
   margin-bottom: 32px;
 }
 
+.bps-theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.95rem;
+  color: #64748b;
+}
+
+.theme-toggle {
+  width: 44px;
+  height: 24px;
+  background: #e2e8f0;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  padding: 2px;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.theme-toggle-knob {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  display: block;
+  transform: translateX(0);
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.theme-toggle.is-on {
+  background: #2563eb;
+  border-color: #1d4ed8;
+}
+
+.theme-toggle.is-on .theme-toggle-knob {
+  transform: translateX(20px);
+}
+
 .bps-title {
   font-size: 2rem;
   font-weight: 700;

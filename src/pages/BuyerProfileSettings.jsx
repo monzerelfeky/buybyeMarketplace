@@ -9,6 +9,9 @@ export default function BuyerProfileSettings() {
     const [baseline, setBaseline] = useState(null);
     const [profileLoading, setProfileLoading] = useState(false);
     const [profileError, setProfileError] = useState("");
+    const [darkMode, setDarkMode] = useState(
+        () => localStorage.getItem("theme") === "dark"
+    );
 
     const egyptGovernorates = [
         "Alexandria",
@@ -156,6 +159,16 @@ export default function BuyerProfileSettings() {
             window.removeEventListener("storage", handleAuthChange);
         };
     }, [API_BASE]);
+
+    useEffect(() => {
+        if (darkMode) {
+            document.body.classList.add("dark-mode");
+            localStorage.setItem("theme", "dark");
+        } else {
+            document.body.classList.remove("dark-mode");
+            localStorage.setItem("theme", "light");
+        }
+    }, [darkMode]);
 
     const isPersonalDirty = () => {
         const base = baseline?.personal ?? { firstName: "", lastName: "", email: "", phone: "" };
@@ -565,6 +578,17 @@ export default function BuyerProfileSettings() {
             <div className="bps-container">
                 <div className="bps-header">
                     <h1 className="bps-title">Profile</h1>
+                    <div className="bps-theme-toggle">
+                        <span>Dark mode</span>
+                        <button
+                            type="button"
+                            className={`theme-toggle ${darkMode ? "is-on" : ""}`}
+                            onClick={() => setDarkMode((prev) => !prev)}
+                            aria-pressed={darkMode}
+                        >
+                            <span className="theme-toggle-knob" />
+                        </button>
+                    </div>
                     <div aria-live="polite" className="bps-sr-only" role="status">
                         {liveMessage}
                     </div>
