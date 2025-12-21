@@ -1,4 +1,5 @@
 const Comment = require('../models/Comment');
+const Order = require('../models/Order');
 
 exports.createComment = async (req, res) => {
   try {
@@ -6,6 +7,25 @@ exports.createComment = async (req, res) => {
     if (payload.itemId && !payload.orderId && !payload.type) {
       payload.type = 'product';
     }
+
+    if (payload.type === 'product' && payload.itemId) {
+      if (!payload.authorId) {
+        return res.status(400).json({ message: 'authorId is required' });
+      }
+
+      const deliveredOrder = await Order.findOne({
+        buyerId: payload.authorId,
+        status: 'Delivered',
+        'items.itemId': payload.itemId,
+      }).select('_id');
+
+      if (!deliveredOrder) {
+        return res.status(403).json({
+          message: 'You can only review items from delivered orders.',
+        });
+      }
+    }
+
     const c = new Comment(payload);
     await c.save();
     res.status(201).json(c);

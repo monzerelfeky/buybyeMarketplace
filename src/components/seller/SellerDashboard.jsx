@@ -22,7 +22,7 @@ export default function SellerDashboard() {
   }).length;
 
   // Flags raised against this seller
-  const flaggedItems = _flags.filter((f) => f.flaggedUserRole === 'buyer').length;
+  const flaggedItems = _flags.filter((f) => f.flaggedUserRole === 'seller').length;
 
   // Normalize order status (supporting legacy and possible statusHistory)
   const normalizeStatus = (o) => {

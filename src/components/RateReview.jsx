@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import "../styles/RateReview.css";
 
 const RateReview = ({ productId }) => {
@@ -7,6 +7,9 @@ const RateReview = ({ productId }) => {
   const [hoverRating, setHoverRating] = useState(0);
   const [currentText, setCurrentText] = useState("");
   const [loading, setLoading] = useState(true);
+  const [canReview, setCanReview] = useState(false);
+  const [eligibilityLoading, setEligibilityLoading] = useState(false);
+  const [eligibilityMessage, setEligibilityMessage] = useState("");
 
   const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
   const userId = localStorage.getItem("userId");
@@ -53,8 +56,64 @@ const RateReview = ({ productId }) => {
     if (productId) fetchReviews();
   }, [productId]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const checkEligibility = async () => {
+      if (!productId) return;
+      if (!userId) {
+        if (!isMounted) return;
+        setCanReview(false);
+        setEligibilityMessage("Login to review this product.");
+        return;
+      }
+
+      setEligibilityLoading(true);
+      setEligibilityMessage("");
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/orders?buyerId=${encodeURIComponent(userId)}`
+        );
+        if (!res.ok) throw new Error("Failed to check orders");
+        const data = await res.json();
+        const eligible = Array.isArray(data)
+          ? data.some(
+              (order) =>
+                order.status === "Delivered" &&
+                Array.isArray(order.items) &&
+                order.items.some(
+                  (item) =>
+                    String(item.itemId || item._id || item.id) ===
+                    String(productId)
+                )
+            )
+          : false;
+        if (!isMounted) return;
+        setCanReview(eligible);
+        setEligibilityMessage(
+          eligible ? "" : "You can review this product after delivery."
+        );
+      } catch (err) {
+        if (!isMounted) return;
+        setCanReview(false);
+        setEligibilityMessage("Unable to verify review eligibility.");
+      } finally {
+        if (isMounted) setEligibilityLoading(false);
+      }
+    };
+
+    checkEligibility();
+    return () => {
+      isMounted = false;
+    };
+  }, [API_BASE, productId, userId]);
+
   // Submit new review
   const handleSubmit = async () => {
+    if (!canReview) {
+      alert("You can only review items from delivered orders.");
+      return;
+    }
     if (currentRating === 0 || currentText.trim() === "") {
       alert("Please provide a rating and review!");
       return;
@@ -93,14 +152,19 @@ const RateReview = ({ productId }) => {
       {/* Review Form */}
       <div className="review-form">
         <h2>Rate & Review Product</h2>
+        {eligibilityMessage ? (
+          <p style={{ marginBottom: "12px", color: "#6b7280" }}>
+            {eligibilityMessage}
+          </p>
+        ) : null}
         <div className="stars">
           {[1, 2, 3, 4, 5].map((star) => (
             <span
               key={star}
               className={`star ${star <= (hoverRating || currentRating) ? "filled" : ""}`}
-              onClick={() => setCurrentRating(star)}
-              onMouseEnter={() => setHoverRating(star)}
-              onMouseLeave={() => setHoverRating(0)}
+              onClick={() => canReview && setCurrentRating(star)}
+              onMouseEnter={() => canReview && setHoverRating(star)}
+              onMouseLeave={() => canReview && setHoverRating(0)}
             >
               ★
             </span>
@@ -110,9 +174,14 @@ const RateReview = ({ productId }) => {
           placeholder="Write your review..."
           value={currentText}
           onChange={(e) => setCurrentText(e.target.value)}
+          disabled={!canReview || eligibilityLoading}
         />
-        <button className="submit-btn" onClick={handleSubmit}>
-          Submit Review
+        <button
+          className="submit-btn"
+          onClick={handleSubmit}
+          disabled={!canReview || eligibilityLoading}
+        >
+          {eligibilityLoading ? "Checking..." : "Submit Review"}
         </button>
       </div>
 
@@ -127,7 +196,10 @@ const RateReview = ({ productId }) => {
             <div key={review._id} className="single-review">
               <div className="stars">
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <span key={star} className={`star ${star <= review.rating ? "filled" : ""}`}>
+                  <span
+                    key={star}
+                    className={`star ${star <= review.rating ? "filled" : ""}`}
+                  >
                     ★
                   </span>
                 ))}
