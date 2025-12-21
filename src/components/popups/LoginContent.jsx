@@ -111,7 +111,7 @@ export default function LoginContent({ onClose, onLoginSuccess }) {
     googleButtonRef.current.innerHTML = "";
     const width = googleButtonRef.current.offsetWidth || 360;
     window.google.accounts.id.renderButton(googleButtonRef.current, {
-      theme: "outline",
+      theme: "filled_blue",
       size: "large",
       shape: "pill",
       text: "continue_with",
@@ -156,6 +156,15 @@ export default function LoginContent({ onClose, onLoginSuccess }) {
     if (!googleReady) return;
     const timer = setTimeout(renderGoogleButton, 0);
     return () => clearTimeout(timer);
+  }, [googleReady, renderGoogleButton]);
+
+  useEffect(() => {
+    if (!googleReady) return undefined;
+    const observer = new MutationObserver(() => {
+      renderGoogleButton();
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
   }, [googleReady, renderGoogleButton]);
 
   const handleSubmit = async () => {
