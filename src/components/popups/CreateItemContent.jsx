@@ -179,6 +179,7 @@ export default function CreateItemContent({ onSave, onClose }) {
             >
               <option>Electronics</option>
               <option>Cars</option>
+              <option>Fashion</option>
               <option>Home & Garden</option>
               <option>Sports & Fitness</option>
             </select>

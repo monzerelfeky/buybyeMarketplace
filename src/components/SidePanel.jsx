@@ -16,6 +16,7 @@ export default function SidePanel({
     "Home & Garden",
     "Sports & Fitness",
     "Cars",
+    "Fashion",
   ];
 
   // Return backdrop only when closed but still visible for fade animation
