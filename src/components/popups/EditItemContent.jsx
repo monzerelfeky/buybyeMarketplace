@@ -224,7 +224,7 @@ export default function EditItemContent({ item, onClose, onSave }) {
             onChange={(e) => setCategory(e.target.value)}
           >
             <option>Electronics</option>
-            <option>Vehicles</option>
+            <option>Cars</option>
             <option>Fashion</option>
             <option>Home & Garden</option>
             <option>Sports & Fitness</option>
