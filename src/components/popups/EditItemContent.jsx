@@ -228,7 +228,7 @@ export default function EditItemContent({ item, onClose, onSave }) {
             <option>Fashion</option>
             <option>Home & Garden</option>
             <option>Sports & Fitness</option>
-            <option>Other</option>
+            
           </select>
         </div>
 
