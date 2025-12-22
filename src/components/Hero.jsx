@@ -1,59 +1,17 @@
-// src/components/Hero.jsx
-import React, { useState, useEffect } from "react";
+﻿// src/components/Hero.jsx
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Hero.css";
 
 export default function Hero() {
   const [query, setQuery] = useState("");
-  const [suggestions, setSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const navigate = useNavigate();
-  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
-
-  // Debounced search effect
-  useEffect(() => {
-    const trimmed = query.trim();
-    if (!trimmed) {
-      setSuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
-
-    const timeout = setTimeout(() => {
-      runSearch(trimmed);
-    }, 150);
-
-    return () => clearTimeout(timeout);
-  }, [query]);
-
-  const runSearch = async (text) => {
-    try {
-      const res = await fetch(
-        `${API_BASE}/api/items/suggestions?query=${encodeURIComponent(text)}`
-      );
-      if (!res.ok) throw new Error("Suggestion request failed");
-      const data = await res.json();
-      setSuggestions(data);
-      setShowSuggestions(true);
-    } catch (err) {
-      console.error("Suggestion fetch failed:", err);
-      setSuggestions([]);
-    }
-  };
 
   // Navigate to search page
   const handleSearch = () => {
     const trimmed = query.trim();
     if (!trimmed) return;
-    navigate(`/category/all?query=${encodeURIComponent(trimmed)}`);
-  };
-
-  // Select suggestion — navigate + fill input
-  const handleSelectSuggestion = (value) => {
-    const trimmed = value.trim();
-    setQuery(trimmed);
-    setShowSuggestions(false);
     navigate(`/category/all?query=${encodeURIComponent(trimmed)}`);
   };
 
@@ -66,11 +24,10 @@ export default function Hero() {
     <section className="hero-section">
       <div className="hero-container">
         <div className="hero-content">
-
           <h1 className="hero-title">BuyBye</h1>
 
           <p className="hero-subtitle">
-            The modern marketplace for your city — cars, homes, electronics, and more.
+            The modern marketplace for your city - cars, homes, electronics, and more.
           </p>
 
           {/* SEARCH BAR */}
@@ -82,7 +39,6 @@ export default function Hero() {
                 placeholder="Search items, categories..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                onFocus={() => query && setShowSuggestions(true)}
                 onKeyDown={handleKeyDown}
               />
 
@@ -90,23 +46,7 @@ export default function Hero() {
                 Search
               </button>
             </div>
-
-            {/* SUGGESTIONS DROPDOWN */}
-            {showSuggestions && suggestions.length > 0 && (
-              <div className="search-suggestions">
-                {suggestions.map((s, i) => (
-                  <div
-                    key={i}
-                    className="suggestion-item"
-                    onClick={() => handleSelectSuggestion(s)}
-                  >
-                    {s}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
-
         </div>
       </div>
     </section>
