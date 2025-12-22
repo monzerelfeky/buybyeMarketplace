@@ -11,6 +11,35 @@ export default function ServiceabilitySettings() {
   const { serviceAreas, saveServiceAreas, loading } = useSeller();
   const [rows, setRows] = useState([{ city: "", deliveryFee: 0 }]);
   const [status, setStatus] = useState(null);
+  const egyptGovernorates = [
+    "Alexandria",
+    "Aswan",
+    "Asyut",
+    "Beheira",
+    "Beni Suef",
+    "Cairo",
+    "Dakahlia",
+    "Damietta",
+    "Faiyum",
+    "Gharbia",
+    "Giza",
+    "Ismailia",
+    "Kafr El Sheikh",
+    "Luxor",
+    "Matrouh",
+    "Minya",
+    "Monufia",
+    "New Valley",
+    "North Sinai",
+    "Port Said",
+    "Qalyubia",
+    "Qena",
+    "Red Sea",
+    "Sharqia",
+    "Sohag",
+    "South Sinai",
+    "Suez",
+  ];
 
   useEffect(() => {
     if (serviceAreas && serviceAreas.length > 0) {
@@ -88,12 +117,18 @@ export default function ServiceabilitySettings() {
             </div>
             {rows.map((row, idx) => (
               <div key={idx} className="serviceability-row">
-                <input
+                <select
                   className="svc-input"
                   value={row.city}
                   onChange={(e) => handleChange(idx, "city", e.target.value)}
-                  placeholder="e.g. Cairo"
-                />
+                >
+                  <option value="">Select a city</option>
+                  {egyptGovernorates.map((gov) => (
+                    <option key={gov} value={gov}>
+                      {gov}
+                    </option>
+                  ))}
+                </select>
                 <input
                   className="svc-input"
                   type="number"
